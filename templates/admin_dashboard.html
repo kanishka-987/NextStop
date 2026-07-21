@@ -1,0 +1,150 @@
+<!-- templates/admin_dashboard.html -->
+<!-- NextStop - Premium Admin Dashboard -->
+{% extends 'base.html' %}
+
+{% block title %}Admin Control Panel - NextStop Transit{% endblock %}
+
+{% block content %}
+<div class="row g-4 animate-fade-in">
+    <!-- Header Summary -->
+    <div class="col-12 d-flex flex-wrap align-items-center justify-content-between mb-2">
+        <div>
+            <h2 class="text-white font-weight-bold mb-1">Admin Dashboard</h2>
+            <p class="text-secondary mb-0">System status overview, GPS integration & machine learning model metrics.</p>
+        </div>
+        <div class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill my-2 my-md-0">
+            <span class="spinner-grow spinner-grow-sm me-1" role="status" aria-hidden="true"></span>
+            System Live (GPS Online)
+        </div>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="col-md-3">
+        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small d-block mb-1">Total Conductors</span>
+                <h3 class="text-white font-weight-bold mb-0">28</h3>
+            </div>
+            <div class="stat-icon bg-indigo-500 bg-opacity-10 p-3 rounded">
+                <i class="bi bi-people-fill text-primary"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small d-block mb-1">Active Conductors</span>
+                <h3 class="text-white font-weight-bold mb-0">14</h3>
+            </div>
+            <div class="stat-icon bg-violet-500 bg-opacity-10 p-3 rounded">
+                <i class="bi bi-person-check-fill text-info"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small d-block mb-1">Today's Tickets</span>
+                <h3 class="text-white font-weight-bold mb-0">156</h3>
+            </div>
+            <div class="stat-icon bg-emerald-500 bg-opacity-10 p-3 rounded">
+                <i class="bi bi-ticket-perforated-fill text-success"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small d-block mb-1">Current Occupancy</span>
+                <h3 class="text-white font-weight-bold mb-0">45 / 60</h3>
+            </div>
+            <div class="stat-icon bg-rose-500 bg-opacity-10 p-3 rounded">
+                <i class="bi bi-bus-front-fill text-warning"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Details -->
+    <div class="col-lg-8 animate-fade-in delay-1">
+        <div class="glass-card p-4 h-100">
+            <h4 class="text-white mb-3"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Recent Activities & Live Fleet</h4>
+            <p class="text-secondary small mb-4">Real-time GPS bus feeds mapping route progress and occupied seats.</p>
+            
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle border-0 mb-0">
+                    <thead>
+                        <tr class="text-secondary border-bottom border-white border-opacity-10">
+                            <th>Bus ID</th>
+                            <th>Route</th>
+                            <th>Conductor</th>
+                            <th>Live Seat Availability</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-white">
+                        {% for b in buses %}
+                        <tr class="border-bottom border-white border-opacity-5">
+                            <td class="font-weight-semibold">{{ b.bus_number }}</td>
+                            <td>Route 4 - City Center</td>
+                            <td>Bus Conductor One</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span>{{ b.current_occupancy }} / {{ b.seat_capacity + b.standing_capacity }} passengers</span>
+                                    <div class="progress flex-grow-1" style="height: 6px; max-width: 100px;">
+                                        {% set occupancy_pct = (b.current_occupancy / (b.seat_capacity + b.standing_capacity) * 100) | int %}
+                                        <div class="progress-bar {% if occupancy_pct >= 90 %}bg-danger{% elif occupancy_pct >= 60 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ occupancy_pct }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if b.current_occupancy >= (b.seat_capacity + b.standing_capacity) %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Bus Full</span>
+                                {% else %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Online</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-secondary py-3">No active bus occupancy logs found in database.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Column -->
+    <div class="col-lg-4 animate-fade-in delay-2">
+        <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+            <div>
+                <h4 class="text-white mb-3"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Quick Actions</h4>
+                <p class="text-secondary small mb-4">Admin management shortcuts for fleet control.</p>
+
+                <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5 mb-4">
+                    <span class="text-secondary small d-block">Current Active Session</span>
+                    <strong class="text-white d-block mt-1">{{ user_name }}</strong>
+                    <span class="text-secondary small">{{ user_email }}</span>
+                </div>
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+                <a href="{{ url_for('admin_conductors') }}" class="btn btn-primary-custom w-100">
+                    <i class="bi bi-people me-1"></i> Manage Conductors
+                </a>
+                <a href="{{ url_for('admin_reports') }}" class="btn btn-secondary-custom w-100">
+                    <i class="bi bi-graph-up me-1"></i> Reports
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-box-arrow-right me-1"></i> Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+<!-- templates/login.html -->
+<!-- NextStop - Modern Responsive Glassmorphic Login Page -->
+{% extends 'base.html' %}
+
+{% block title %}Log In - NextStop Transit Platform{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center py-4 animate-fade-in">
+    <div class="col-12 login-container">
+        <div class="glass-card p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 60px; height: 60px;">
+                    <i class="bi bi-shield-lock-fill fs-3"></i>
+                </div>
+                <h3 class="text-white font-weight-bold mb-1">Welcome Back</h3>
+                <p class="text-secondary small">Access the GPS smart transit control panel</p>
+            </div>
+
+            <!-- Login Form -->
+            <form action="{{ url_for('auth.login') }}" method="POST" id="authLoginForm" novalidate>
+                
+                <!-- Role Selector Tabs -->
+                <div class="mb-4">
+                    <label class="form-label text-secondary small d-block text-center mb-2">Select User Role</label>
+                    <div class="d-flex rounded" style="background: rgba(255,255,255,0.03); padding: 4px;">
+                        <button type="button" class="btn role-tab-btn flex-grow-1 text-white {% if not role or role == 'conductor' %}active{% endif %}" id="conductorTab" data-role="conductor">
+                            <i class="bi bi-person-workspace me-1"></i> Conductor
+                        </button>
+                        <button type="button" class="btn role-tab-btn flex-grow-1 text-white {% if role == 'admin' %}active{% endif %}" id="adminTab" data-role="admin">
+                            <i class="bi bi-speedometer2 me-1"></i> Admin
+                        </button>
+                    </div>
+                    <!-- Hidden input to store chosen role -->
+                    <input type="hidden" name="role" id="roleHiddenInput" value="{{ role if role else 'conductor' }}">
+                </div>
+
+                <!-- Email Input -->
+                <div class="mb-3">
+                    <label for="email" class="form-label text-secondary small">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                        <input type="email" class="form-control form-control-custom border-start-0" id="email" name="email" value="{{ email if email else '' }}" placeholder="name@nextstop.com" required>
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div class="mb-3">
+                    <label for="password" class="form-label text-secondary small">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-key"></i>
+                        </span>
+                        <input type="password" class="form-control form-control-custom border-start-0 border-end-0" id="password" name="password" placeholder="••••••••" required>
+                        <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePassword" style="border-color: var(--border-color); color: var(--text-secondary); background: rgba(255,255,255,0.02);">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input bg-dark border-secondary" type="checkbox" id="rememberMe" name="remember_me">
+                        <label class="form-check-label text-secondary small" for="rememberMe">
+                            Remember Me
+                        </label>
+                    </div>
+                    <a href="javascript:void(0);" onclick="alert('Password reset instructions have been logged to system admin.');" class="text-decoration-none text-primary small">
+                        Forgot Password?
+                    </a>
+                </div>
+
+                <!-- Action Button -->
+                <button type="submit" class="btn btn-primary-custom w-100 py-2.5 mb-3">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Log In
+                </button>
+
+                <div class="text-center mt-3">
+                    <span class="text-secondary small">Don't have an account?</span>
+                    <a href="{{ url_for('auth.register') }}" class="text-decoration-none text-primary ms-1 small">
+                        Register as Conductor
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

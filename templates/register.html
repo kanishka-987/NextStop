@@ -1,0 +1,84 @@
+<!-- templates/register.html -->
+<!-- NextStop - Conductor Registration Page -->
+{% extends 'base.html' %}
+
+{% block title %}Register Conductor - NextStop Transit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center py-4 animate-fade-in">
+    <div class="col-12 login-container">
+        <div class="glass-card p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 60px; height: 60px;">
+                    <i class="bi bi-person-plus-fill fs-3"></i>
+                </div>
+                <h3 class="text-white font-weight-bold mb-1">Create Conductor Account</h3>
+                <p class="text-secondary small">Register to issue tickets and monitor live bus seat occupancy</p>
+                <div class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 mt-1 px-3 py-1">
+                    Role: Conductor Only
+                </div>
+            </div>
+
+            <!-- Registration Form -->
+            <form action="{{ url_for('auth.register') }}" method="POST" id="registerForm">
+                
+                <!-- Full Name -->
+                <div class="mb-3">
+                    <label for="full_name" class="form-label text-secondary small">Full Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-person"></i>
+                        </span>
+                        <input type="text" class="form-control form-control-custom border-start-0" id="full_name" name="full_name" value="{{ full_name if full_name else '' }}" placeholder="Karan Verma" required>
+                    </div>
+                </div>
+
+                <!-- Email Address -->
+                <div class="mb-3">
+                    <label for="email" class="form-label text-secondary small">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                        <input type="email" class="form-control form-control-custom border-start-0" id="email" name="email" value="{{ email if email else '' }}" placeholder="karan@nextstop.com" required>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label for="password" class="form-label text-secondary small">Password (Min 6 chars)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-key"></i>
+                        </span>
+                        <input type="password" class="form-control form-control-custom border-start-0" id="password" name="password" placeholder="••••••••" required minlength="6">
+                    </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label text-secondary small">Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-check2-square"></i>
+                        </span>
+                        <input type="password" class="form-control form-control-custom border-start-0" id="confirm_password" name="confirm_password" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button type="submit" class="btn btn-primary-custom w-100 py-2.5 mb-3">
+                    <i class="bi bi-person-check me-2"></i> Register Account
+                </button>
+
+                <div class="text-center mt-3">
+                    <span class="text-secondary small">Already registered?</span>
+                    <a href="{{ url_for('auth.login') }}" class="text-decoration-none text-primary ms-1 small">
+                        Log In here
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

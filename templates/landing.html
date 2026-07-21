@@ -1,0 +1,190 @@
+<!-- templates/landing.html -->
+<!-- NextStop - Professional Multi-Page Landing Page -->
+{% extends 'base.html' %}
+
+{% block title %}NextStop - Smart Bus Occupancy Monitoring System{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row align-items-center min-vh-75 py-5 animate-fade-in">
+    <div class="col-lg-6 mb-5 mb-lg-0">
+        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill mb-4 font-weight-semibold">
+            <i class="bi bi-bus-front-fill me-1"></i> Smart City Transit Platform
+        </span>
+        <h1 class="hero-title text-white mb-4">
+            NextStop: <br>
+            <span class="text-gradient">Smart Bus Occupancy</span> Monitoring System
+        </h1>
+        <p class="fs-5 text-secondary mb-4 pb-2">
+            Real-Time Bus Seat Tracking, Instant Ticket Generation, and Intelligent Transit Fleet Management for Modern Commuters and Operators.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+            {% if logged_in %}
+                {% if user_role == 'admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary-custom btn-lg">
+                        <i class="bi bi-speedometer2 me-2"></i> Admin Dashboard
+                    </a>
+                {% elif user_role == 'conductor' %}
+                    <a href="{{ url_for('conductor_dashboard') }}" class="btn btn-primary-custom btn-lg">
+                        <i class="bi bi-layout-wtf me-2"></i> Conductor Dashboard
+                    </a>
+                {% endif %}
+            {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary-custom btn-lg">
+                    <i class="bi bi-rocket-takeoff me-2"></i> Get Started
+                </a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-secondary-custom btn-lg">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Login
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light btn-lg border-opacity-25">
+                    <i class="bi bi-person-plus me-2"></i> Register
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Hero Illustration / Graphic Card -->
+    <div class="col-lg-6">
+        <div class="glass-card p-4 p-md-5 text-center position-relative overflow-hidden">
+            <div class="position-absolute top-0 start-0 w-100 h-100 bg-gradient-to-tr from-indigo-500 to-violet-500 opacity-5 z-0"></div>
+            
+            <div class="position-relative z-1 py-4">
+                <!-- Bus Illustration SVG Graphic -->
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-25 text-primary rounded-circle mb-4" style="width: 110px; height: 110px;">
+                    <i class="bi bi-bus-front-fill" style="font-size: 3.5rem;"></i>
+                </div>
+                
+                <h3 class="text-white font-weight-bold mb-2">Live Bus Fleet Tracker</h3>
+                <p class="text-secondary small mb-4">Monitoring Bus #NS-B01 &bull; Route 4 (City Center Line)</p>
+                
+                <div class="row g-3 text-start">
+                    <div class="col-4">
+                        <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5">
+                            <div class="text-secondary small mb-1">Occupancy</div>
+                            <div class="fs-5 font-weight-bold text-white">45 / 60</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5">
+                            <div class="text-secondary small mb-1">Seats Free</div>
+                            <div class="fs-5 font-weight-bold text-success">0 Seats</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5">
+                            <div class="text-secondary small mb-1">Standing</div>
+                            <div class="fs-5 font-weight-bold text-info">15 Left</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div id="features" class="py-5 my-5 border-top border-white border-opacity-5 animate-fade-in delay-1">
+    <div class="text-center mb-5">
+        <span class="text-primary font-weight-semibold text-uppercase tracking-wider">Capabilities</span>
+        <h2 class="text-white font-weight-bold mt-1">Core System Features</h2>
+        <p class="text-secondary max-w-2xl mx-auto">Engineered to streamline public transit operations and passenger transparency.</p>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100">
+                <div class="feature-icon-wrapper">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <h4 class="text-white mb-3">Secure Login</h4>
+                <p class="text-secondary">Protected role-based authentication separating Admin governance and Conductor ticket issuance.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100">
+                <div class="feature-icon-wrapper">
+                    <i class="bi bi-ticket-perforated-fill"></i>
+                </div>
+                <h4 class="text-white mb-3">Ticket Generation</h4>
+                <p class="text-secondary">Instant fare calculations, ticket receipt issuance, and transaction logging stored securely in MySQL.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100">
+                <div class="feature-icon-wrapper">
+                    <i class="bi bi-activity"></i>
+                </div>
+                <h4 class="text-white mb-3">Live Occupancy Monitoring</h4>
+                <p class="text-secondary">Dynamic passenger calculation updating seated and standing capacities in real-time as tickets are issued.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100">
+                <div class="feature-icon-wrapper">
+                    <i class="bi bi-speedometer2"></i>
+                </div>
+                <h4 class="text-white mb-3">Admin Dashboard</h4>
+                <p class="text-secondary">Centralized overview of active conductors, fleet counts, ridership reports, and system metrics.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100">
+                <div class="feature-icon-wrapper">
+                    <i class="bi bi-phone"></i>
+                </div>
+                <h4 class="text-white mb-3">Responsive Design</h4>
+                <p class="text-secondary">Bootstrap 5 glassmorphism interface built seamlessly for desktops, handheld tablets, and smartphones.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card p-4 h-100">
+                <div class="feature-icon-wrapper">
+                    <i class="bi bi-cpu-fill"></i>
+                </div>
+                <h4 class="text-white mb-3">Modular Architecture</h4>
+                <p class="text-secondary">Designed with Flask Blueprints to seamlessly integrate future GPS Live Tracking and ML Prediction modules.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="py-5 my-5 border-top border-white border-opacity-5 animate-fade-in delay-2">
+    <div class="text-center mb-5">
+        <span class="text-primary font-weight-semibold text-uppercase tracking-wider">Workflow</span>
+        <h2 class="text-white font-weight-bold mt-1">How It Works</h2>
+        <p class="text-secondary max-w-2xl mx-auto">Four simple steps powering real-time passenger capacity tracking.</p>
+    </div>
+    
+    <div class="row g-4 text-center">
+        <div class="col-md-3">
+            <div class="glass-card p-4 h-100 position-relative">
+                <div class="badge bg-primary fs-5 rounded-circle mb-3" style="width: 45px; height: 45px; display: inline-flex; align-items: center; justify-content: center;">1</div>
+                <h5 class="text-white mb-2">Step 1 – Login</h5>
+                <p class="text-secondary small mb-0">Conductor or Admin logs into their role-protected console using secure credentials.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-card p-4 h-100 position-relative">
+                <div class="badge bg-primary fs-5 rounded-circle mb-3" style="width: 45px; height: 45px; display: inline-flex; align-items: center; justify-content: center;">2</div>
+                <h5 class="text-white mb-2">Step 2 – Generate Ticket</h5>
+                <p class="text-secondary small mb-0">Conductor selects route stops, enters passenger counts, and issues travel receipts.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-card p-4 h-100 position-relative">
+                <div class="badge bg-primary fs-5 rounded-circle mb-3" style="width: 45px; height: 45px; display: inline-flex; align-items: center; justify-content: center;">3</div>
+                <h5 class="text-white mb-2">Step 3 – Occupancy Updates</h5>
+                <p class="text-secondary small mb-0">System automatically recalculates current occupancy, seated room, and standing space.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="glass-card p-4 h-100 position-relative">
+                <div class="badge bg-primary fs-5 rounded-circle mb-3" style="width: 45px; height: 45px; display: inline-flex; align-items: center; justify-content: center;">4</div>
+                <h5 class="text-white mb-2">Step 4 – Dashboard Displays</h5>
+                <p class="text-secondary small mb-0">Live dashboards immediately display available seats and alert when buses reach capacity.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

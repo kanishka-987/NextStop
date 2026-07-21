@@ -1,0 +1,110 @@
+<!-- templates/about.html -->
+<!-- NextStop - About Project Page -->
+{% extends 'base.html' %}
+
+{% block title %}About - NextStop Transit System{% endblock %}
+
+{% block content %}
+<div class="row g-4 animate-fade-in py-3">
+    <div class="col-12 text-center mb-4">
+        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill mb-3 font-weight-semibold">
+            <i class="bi bi-info-circle-fill me-1"></i> System Information
+        </span>
+        <h1 class="text-white font-weight-bold">About NextStop Project</h1>
+        <p class="text-secondary max-w-2xl mx-auto">GPS-Based Smart Bus Occupancy Prediction and Seat Availability System</p>
+    </div>
+
+    <!-- Objectives -->
+    <div class="col-lg-6">
+        <div class="glass-card p-4 h-100">
+            <h3 class="text-white mb-3"><i class="bi bi-bullseye text-primary me-2"></i>Project Objectives</h3>
+            <p class="text-secondary mb-3">NextStop aims to solve urban public transit congestion by introducing real-time seat tracking and data-driven passenger forecasts.</p>
+            <ul class="text-secondary d-flex flex-column gap-2 mb-0 ps-3">
+                <li>Eliminate overcrowding by giving commuters live occupancy visibility.</li>
+                <li>Provide conductors with instant ticket generation & auto seat calculation tools.</li>
+                <li>Give transit administrators fleet monitoring and ridership metrics.</li>
+                <li>Lay the foundation for machine learning passenger load predictions.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="col-lg-6">
+        <div class="glass-card p-4 h-100">
+            <h3 class="text-white mb-3"><i class="bi bi-stack text-secondary me-2"></i>Technology Stack</h3>
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="p-3 rounded bg-dark bg-opacity-40 border border-white border-opacity-5">
+                        <strong class="text-white d-block mb-1"><i class="bi bi-code-slash text-warning me-1"></i> Frontend</strong>
+                        <span class="text-secondary small">HTML5, CSS3, JavaScript (ES6), Bootstrap 5</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 rounded bg-dark bg-opacity-40 border border-white border-opacity-5">
+                        <strong class="text-white d-block mb-1"><i class="bi bi-server text-info me-1"></i> Backend</strong>
+                        <span class="text-secondary small">Python Flask, Flask Blueprints, Werkzeug</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 rounded bg-dark bg-opacity-40 border border-white border-opacity-5">
+                        <strong class="text-white d-block mb-1"><i class="bi bi-database text-success me-1"></i> Database</strong>
+                        <span class="text-secondary small">MySQL Database, mysql-connector-python</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 rounded bg-dark bg-opacity-40 border border-white border-opacity-5">
+                        <strong class="text-white d-block mb-1"><i class="bi bi-shield-lock text-danger me-1"></i> Security</strong>
+                        <span class="text-secondary small">Flask Sessions, PBKDF2/Scrypt Hashing</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modules Implemented -->
+    <div class="col-lg-6">
+        <div class="glass-card p-4 h-100">
+            <h3 class="text-white mb-3"><i class="bi bi-layers-fill text-info me-2"></i>System Modules</h3>
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex gap-3">
+                    <div class="badge bg-success bg-opacity-20 text-success p-2 rounded align-self-start">Module 1</div>
+                    <div>
+                        <h5 class="text-white mb-1">User Authentication System</h5>
+                        <p class="text-secondary small mb-0">Role-based login/logout for Admin and Conductors with secure password hashing.</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-3">
+                    <div class="badge bg-success bg-opacity-20 text-success p-2 rounded align-self-start">Module 2</div>
+                    <div>
+                        <h5 class="text-white mb-1">Ticket Management System</h5>
+                        <p class="text-secondary small mb-0">Ticket issuance, automatic seat/standing calculations, and overflow capacity blocks.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Future Enhancements -->
+    <div class="col-lg-6">
+        <div class="glass-card p-4 h-100">
+            <h3 class="text-white mb-3"><i class="bi bi-rocket-takeoff-fill text-warning me-2"></i>Future Enhancements</h3>
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex gap-3">
+                    <div class="badge bg-warning bg-opacity-20 text-warning p-2 rounded align-self-start">Module 3</div>
+                    <div>
+                        <h5 class="text-white mb-1">GPS Real-Time Fleet Tracking</h5>
+                        <p class="text-secondary small mb-0">Live bus geolocation updates, route coordinates, and ETA estimations.</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-3">
+                    <div class="badge bg-primary bg-opacity-20 text-primary p-2 rounded align-self-start">Module 4</div>
+                    <div>
+                        <h5 class="text-white mb-1">ML Passenger Load Forecasting</h5>
+                        <p class="text-secondary small mb-0">Predictive algorithms forecasting seat availability at upcoming stops based on historical trends.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
