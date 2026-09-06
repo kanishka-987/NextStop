@@ -1,0 +1,278 @@
+<!-- templates/passenger_home.html -->
+<!-- NextStop - Modern Responsive Glassmorphic Passenger Portal -->
+{% extends 'base.html' %}
+
+{% block title %}Passenger Portal - NextStop Transit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4 animate-fade-in">
+    <div class="col-12 col-lg-10">
+        <!-- Greeting Header -->
+        <div class="text-center mb-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill mb-3 font-weight-semibold">
+                <i class="bi bi-people-fill me-1"></i> Public Passenger Portal
+            </span>
+            <h2 class="text-white font-weight-bold">Live Bus Occupancy & ETAs</h2>
+            <p class="text-secondary max-w-xl mx-auto">Check real-time passenger capacity, seating availability, and live GPS arrival times without logging in.</p>
+        </div>
+
+        <!-- Search Bar Card -->
+        <div class="glass-card p-4 mb-4">
+            <form id="passengerSearchForm" onsubmit="event.preventDefault(); fetchBusFeeds();">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-9">
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" class="form-control form-control-custom border-start-0" id="passengerSearchQuery" placeholder="Search by Bus Number (e.g., NS-B01) or Route (e.g., Route 4)..." autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary-custom w-100 py-2.5">
+                            <i class="bi bi-filter me-1"></i> Filter Feeds
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div class="text-center my-5 d-none" id="searchLoadingSpinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-secondary small mt-2">Fetching live GPS coordinates & predictions...</p>
+        </div>
+
+        <!-- Results Grid -->
+        <div class="row g-4" id="passengerResultsContainer">
+            <!-- Dynamic JavaScript content goes here -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="text-center py-5 d-none" id="passengerEmptyState">
+            <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-circle mb-3" style="width: 60px; height: 60px;">
+                <i class="bi bi-exclamation-triangle fs-3"></i>
+            </div>
+            <h4 class="text-white font-weight-bold mb-1">No Active Buses Found</h4>
+            <p class="text-secondary small">Make sure the bus conductor has initialized their GPS console feed.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Passenger Real-time Update Scripts -->
+<script>
+{% raw %}
+    async function fetchBusFeeds() {
+        const query = document.getElementById("passengerSearchQuery").value;
+        const container = document.getElementById("passengerResultsContainer");
+        const emptyState = document.getElementById("passengerEmptyState");
+        const spinner = document.getElementById("searchLoadingSpinner");
+
+        spinner.classList.remove("d-none");
+
+        try {
+            const response = await fetch(`/passenger/search?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            spinner.classList.add("d-none");
+            container.innerHTML = "";
+
+            if (!data.results || data.results.length === 0) {
+                emptyState.classList.remove("d-none");
+                return;
+            }
+
+            emptyState.classList.add("d-none");
+            
+            const aliasMap = {
+                "Central Station": "Chennai Central",
+                "Oak Avenue": "Guindy",
+                "Maple Road": "Tambaram",
+                "Aisle Street": "Chengalpattu",
+                "City Center": "Mahabalipuram",
+                "Tech Park": "Kovalam",
+                "South Gate": "Sholinganallur",
+                "East Airport": "Chennai Airport"
+            };
+            const stopsArray = Object.keys(aliasMap);
+
+            data.results.forEach(bus => {
+                const occupancyPct = Math.round((bus.current_occupancy / (bus.seat_capacity + bus.standing_capacity)) * 100);
+                
+                let currIndex = stopsArray.indexOf(bus.current_stop);
+                if (currIndex === -1) currIndex = 0;
+                const pct = (currIndex / (stopsArray.length - 1)) * 100;
+                
+                // Color formatting for crowd level indicators
+                let badgeClass = "bg-success text-success";
+                if (bus.crowd_level === "Medium Crowd") badgeClass = "bg-warning text-warning";
+                else if (bus.crowd_level === "High Crowd") badgeClass = "bg-danger text-danger";
+                
+                const currAlias = aliasMap[bus.current_stop] || bus.current_stop;
+                const nextAlias = aliasMap[bus.next_stop] || bus.next_stop;
+                const srcAlias = aliasMap[bus.source_stop] || bus.source_stop;
+                const destAlias = aliasMap[bus.destination_stop] || bus.destination_stop;
+
+                container.innerHTML += `
+                    <div class="col-12 animate-fade-in">
+                        <div class="glass-card p-4 h-100">
+                            <!-- Card Header -->
+                            <div class="d-flex flex-wrap align-items-center justify-content-between border-bottom border-white border-opacity-10 pb-3 mb-3 gap-2">
+                                <div>
+                                    <h4 class="text-white font-weight-bold mb-1">
+                                        <i class="bi bi-bus-front-fill text-primary me-2"></i>Bus ${bus.bus_number}
+                                    </h4>
+                                    <span class="text-secondary small">Chennai Central ➔ Chennai Airport</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge ${badgeClass} bg-opacity-10 border border-current px-2.5 py-1 text-uppercase font-weight-semibold" style="font-size: 0.75rem;">
+                                        ${bus.crowd_indicator} ${bus.crowd_level}
+                                    </span>
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 font-weight-semibold" style="font-size: 0.75rem;">
+                                        GPS Feed: ${bus.gps_status}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Route Stop Progress Visualizer -->
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="text-start">
+                                        <span class="text-secondary small d-block">Current Stop</span>
+                                        <strong class="text-white">${currAlias}</strong>
+                                    </div>
+                                    <div class="text-center flex-grow-1 px-4 d-none d-sm-block">
+                                        <div class="position-relative py-2">
+                                            <div class="progress" style="height: 3px; background: rgba(255,255,255,0.05);">
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: ${pct}%"></div>
+                                            </div>
+                                            <span class="position-absolute top-50 start-50 translate-middle badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-0.5" style="font-size: 0.65rem;">
+                                                EN ROUTE
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="text-secondary small d-block">Next Stop</span>
+                                        <strong class="text-white">${nextAlias}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ETA & Capacity Metrics -->
+                            <div class="row g-3 mb-3">
+                                <!-- ETA Card -->
+                                <div class="col-sm-6 col-md-4">
+                                    <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5 d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="text-secondary small d-block mb-1">Estimated Arrival (ETA)</span>
+                                            <h4 class="text-white font-weight-bold mb-0">${bus.eta}</h4>
+                                        </div>
+                                        <div class="bg-primary bg-opacity-10 p-2.5 rounded text-primary">
+                                            <i class="bi bi-clock-fill fs-4"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Seat Availability Card -->
+                                <div class="col-sm-6 col-md-4">
+                                    <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5 d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="text-secondary small d-block mb-1">Available Seats</span>
+                                            <h4 class="text-success font-weight-bold mb-0">${bus.seats_available} / ${bus.seat_capacity}</h4>
+                                        </div>
+                                        <div class="bg-success bg-opacity-10 p-2.5 rounded text-success">
+                                            <i class="bi bi-circle-check-fill fs-4"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Standing Capacity Card -->
+                                <div class="col-sm-6 col-md-4">
+                                    <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5 d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <span class="text-secondary small d-block mb-1">Standing Space</span>
+                                            <h4 class="text-info font-weight-bold mb-0">${bus.standing_available} / ${bus.standing_capacity}</h4>
+                                        </div>
+                                        <div class="bg-info bg-opacity-10 p-2.5 rounded text-info">
+                                            <i class="bi bi-people-fill fs-4"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Occupancy percentage progress bar -->
+                            <div class="mb-3">
+                                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                                    <span class="text-secondary small">Current Combined Occupancy</span>
+                                    <span class="text-white small font-weight-bold">${bus.current_occupancy} / ${bus.seat_capacity + bus.standing_capacity} passengers (${occupancyPct}%)</span>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar {% if occupancyPct >= 90 %}bg-danger{% elif occupancyPct >= 60 %}bg-warning{% else %}bg-success{% endif %}" style="width: ${occupancyPct}%"></div>
+                                </div>
+                            </div>
+
+                            <!-- ML Prediction Insights -->
+                            <div class="mt-4 border-top border-white border-opacity-10 pt-3">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="bi bi-cpu-fill text-primary fs-5 me-2"></i>
+                                    <h5 class="text-white font-weight-bold mb-0">ML AI Predictions</h5>
+                                </div>
+                                
+                                <div class="row g-3">
+                                    <div class="col-sm-6 col-md-3">
+                                        <div class="p-2 rounded bg-dark bg-opacity-25 border border-white border-opacity-5">
+                                            <span class="text-secondary small d-block">15 min</span>
+                                            <strong class="text-white">${bus.pred_15} / ${bus.seat_capacity + bus.standing_capacity}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <div class="p-2 rounded bg-dark bg-opacity-25 border border-white border-opacity-5">
+                                            <span class="text-secondary small d-block">30 min</span>
+                                            <strong class="text-white">${bus.pred_30} / ${bus.seat_capacity + bus.standing_capacity}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <div class="p-2 rounded bg-dark bg-opacity-25 border border-white border-opacity-5">
+                                            <span class="text-secondary small d-block">Crowd Level</span>
+                                            <strong class="text-${bus.crowd_color} text-uppercase">${bus.crowd_level}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-3">
+                                        <div class="p-2 rounded bg-dark bg-opacity-25 border border-white border-opacity-5">
+                                            <span class="text-secondary small d-block">Predicted Seats</span>
+                                            <strong class="text-success">${bus.pred_seats_available}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                ${bus.standing_warning ? `
+                                <div class="mt-3 p-2 rounded bg-warning bg-opacity-10 border border-warning border-opacity-25 text-warning small d-flex align-items-center">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <span><strong>Warning:</strong> Standing may be required.</span>
+                                </div>
+                                ` : ''}
+                                
+                                <div class="text-end mt-3">
+                                    <span class="text-secondary small">Route bounds: <strong class="text-white">${srcAlias} ➔ ${destAlias}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+        } catch (error) {
+            console.error("Error fetching passenger search records:", error);
+        }
+    }
+
+    // Auto refresh every 10 seconds
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchBusFeeds();
+        setInterval(fetchBusFeeds, 10000);
+    });
+{% endraw %}
+</script>
+{% endblock %}

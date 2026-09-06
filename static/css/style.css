@@ -246,14 +246,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: default;
     font-weight: 600;
     font-size: 0.85rem;
     transition: all 0.2s ease;
-}
-
-.bus-seat:hover {
-    border-color: var(--primary-color);
 }
 
 .bus-seat.occupied {
@@ -265,6 +261,12 @@ body {
 .bus-seat.available {
     background-color: var(--accent-emerald);
     border-color: var(--accent-emerald);
+    color: white;
+}
+
+.bus-seat.reserved {
+    background-color: #6c757d;
+    border-color: #6c757d;
     color: white;
 }
 

@@ -26,21 +26,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 2. Interactive Role Selection Cards/Tabs (Modern UI)
-    const roleSelectors = document.querySelectorAll(".role-select-card");
+    const roleTabs = document.querySelectorAll(".role-tab-btn, .role-select-card");
     const roleHiddenInput = document.getElementById("roleHiddenInput");
+    const submitBtn = document.getElementById("submitBtn");
 
-    if (roleSelectors.length > 0 && roleHiddenInput) {
-        roleSelectors.forEach(selector => {
-            selector.addEventListener("click", () => {
-                // Clear active class from all
-                roleSelectors.forEach(s => s.classList.remove("active"));
-                
-                // Add active to current
-                selector.classList.add("active");
-                
-                // Set the hidden input value
-                const selectedRole = selector.getAttribute("data-role");
-                roleHiddenInput.value = selectedRole;
+    function setRole(role) {
+        if (!roleHiddenInput) return;
+        roleHiddenInput.value = role;
+        
+        roleTabs.forEach(tab => {
+            if (tab.getAttribute("data-role") === role) {
+                tab.classList.add("active");
+            } else {
+                tab.classList.remove("active");
+            }
+        });
+
+        if (submitBtn) {
+            const capitalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+            submitBtn.innerHTML = `<i class="bi bi-box-arrow-in-right me-2"></i> Login as ${capitalizedRole}`;
+        }
+    }
+
+    if (roleTabs.length > 0 && roleHiddenInput) {
+        // Initialize based on hidden input value
+        setRole(roleHiddenInput.value);
+
+        roleTabs.forEach(tab => {
+            tab.addEventListener("click", () => {
+                const selectedRole = tab.getAttribute("data-role");
+                setRole(selectedRole);
             });
         });
     }

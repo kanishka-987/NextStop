@@ -1,48 +1,62 @@
 <!-- templates/conductor_dashboard.html -->
-<!-- NextStop - Premium Conductor Panel -->
+<!-- NextStop - Premium Conductor Console -->
 {% extends 'base.html' %}
 
-{% block title %}Conductor Control Panel - NextStop Transit{% endblock %}
+{% block title %}Conductor Console - NextStop Transit{% endblock %}
 
 {% block content %}
 <div class="row g-4 animate-fade-in">
-    <!-- Header Summary -->
-    <div class="col-12 d-flex flex-wrap align-items-center justify-content-between mb-2">
-        <div>
-            <h2 class="text-white font-weight-bold mb-1">Conductor Console</h2>
-            <p class="text-secondary mb-0">Update live bus passenger counts and seat occupancy for prediction sync.</p>
-        </div>
-        <div class="badge bg-indigo-500 bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill my-2 my-md-0">
-            <i class="bi bi-broadcast me-1"></i> Syncing Live to Central Server
-        </div>
-    </div>
-
     <!-- Active Bus Details Panel -->
     <div class="col-lg-4">
         <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
             <div>
-                <h4 class="text-white mb-3">Bus Info</h4>
-                <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5 mb-4">
+                <div class="mb-4">
+                    <form method="GET" action="{{ url_for('conductor_dashboard') }}">
+                        <label class="text-white mb-2 font-weight-bold">Select Active Bus</label>
+                        <select class="form-select bg-dark text-white border-secondary mb-2" name="bus_number" onchange="this.form.submit()">
+                            {% for b in buses %}
+                            <option value="{{ b.bus_number }}" {% if bus.bus_number == b.bus_number %}selected{% endif %}>{{ b.bus_number }} - {{ b.route_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+
+                <h4 class="text-white mb-3">Bus Info & GPS Status</h4>
+                <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5 mb-4 small">
                     <div class="mb-2">
-                        <span class="text-secondary small d-block">Bus Number</span>
-                        <strong class="text-white fs-5">{{ bus.bus_number }} (Volvo Multi-axle)</strong>
+                        <span class="text-secondary small d-block">Bus Identifier</span>
+                        <strong class="text-white fs-6" id="busIdentifier">{{ bus.bus_number }}</strong>
                     </div>
                     <div class="mb-2">
-                        <span class="text-secondary small d-block">Route Assignation</span>
-                        <strong class="text-white">Route 4 - City Center (Downtown)</strong>
+                        <span class="text-secondary small d-block">GPS Status</span>
+                        <strong class="text-info" id="gpsStatusText"><i class="bi bi-broadcast me-1"></i> Initializing...</strong>
                     </div>
-                    <div>
-                        <span class="text-secondary small d-block">Current Conductor</span>
-                        <strong class="text-white">{{ user_name }}</strong>
+                    <div class="mb-2">
+                        <span class="text-secondary small d-block">Current Stop Location</span>
+                        <strong class="text-white" id="currentStopText">{{ bus.current_stop }}</strong>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <span class="text-secondary small d-block">Latitude</span>
+                            <span class="text-white" id="latText">{{ gps.latitude }}</span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-secondary small d-block">Longitude</span>
+                            <span class="text-white" id="lonText">{{ gps.longitude }}</span>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-secondary small d-block">Last Updated</span>
+                        <span class="text-secondary" id="lastUpdatedText">{{ gps.last_updated }}</span>
                     </div>
                 </div>
 
-                <h4 class="text-white mb-3">Occupancy Summary</h4>
+                <h4 class="text-white mb-3">Live Occupancy Summary</h4>
                 <div class="row g-2 text-start mb-4">
                     <div class="col-6">
                         <div class="p-3 rounded bg-dark bg-opacity-40 border border-white border-opacity-5">
                             <span class="text-secondary small d-block mb-1">Current Occupancy</span>
-                            <span class="fs-4 font-weight-bold text-gradient">{{ bus.current_occupancy }} / {{ bus.seat_capacity + bus.standing_capacity }}</span>
+                            <span class="fs-4 font-weight-bold text-gradient">{{ bus.current_occupancy }} / 80</span>
                         </div>
                     </div>
                     <div class="col-6">
@@ -53,14 +67,85 @@
                     </div>
                     <div class="col-6">
                         <div class="p-3 rounded bg-dark bg-opacity-40 border border-white border-opacity-5">
-                            <span class="text-secondary small d-block mb-1">Standing Capacity</span>
-                            <span class="fs-4 font-weight-bold text-info">{{ bus.standing_capacity }}</span>
+                            <span class="text-secondary small d-block mb-1">Standing Count</span>
+                            <span class="fs-4 font-weight-bold text-info">{{ bus.standing_occupancy }} / 20</span>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="p-3 rounded bg-dark bg-opacity-40 border border-white border-opacity-5">
                             <span class="text-secondary small d-block mb-1">Today's Tickets</span>
                             <span class="fs-4 font-weight-bold text-warning">{{ tickets|length }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ML Forecasting Card -->
+                <h4 class="text-white mb-3">ML Crowding Prediction (15-30m)</h4>
+                {% set level = forecast.crowd_level %}
+                <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5 mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small">Predicted Occupancy:</span>
+                        <strong class="text-white">{{ forecast.predicted_occupancy }} / 80</strong>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-secondary small">Crowd Level:</span>
+                        <span class="badge {% if 'Low' in level %}bg-success{% elif 'Medium' in level %}bg-warning text-dark{% else %}bg-danger{% endif %} px-2.5 py-1">
+                            {{ level }}
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="text-secondary small">Prediction Confidence:</span>
+                        <strong class="text-info">{{ forecast.accuracy }}%</strong>
+                    </div>
+                </div>
+
+                <!-- GPS Demo Mode Card -->
+                <h4 class="text-white mb-3">GPS Tracking Control</h4>
+                <div class="p-3 rounded bg-dark bg-opacity-50 border border-secondary mb-4 position-relative">
+                    <div id="demoActiveBadge" class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 small rounded-bottom-start d-none" style="font-size: 0.75rem; font-weight: bold;">
+                        DEMO MODE ACTIVE
+                    </div>
+                    <div class="mb-3 d-flex gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="gpsMode" id="gpsReal" value="real" checked>
+                            <label class="form-check-label text-white small" for="gpsReal">
+                                Real GPS
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="gpsMode" id="gpsDemo" value="demo">
+                            <label class="form-check-label text-white small" for="gpsDemo">
+                                Demo Mode
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="demoControls" class="d-none">
+                        <div class="mb-2">
+                            <label class="text-secondary small d-block mb-1">Demo Location</label>
+                            <div class="input-group input-group-sm">
+                                <select class="form-select bg-dark text-white border-secondary" id="demoStopSelect">
+                                    <option value="Central Station">Chennai Central</option>
+                                    <option value="Oak Avenue">Guindy</option>
+                                    <option value="Maple Road">Tambaram</option>
+                                    <option value="Aisle Street">Chengalpattu</option>
+                                    <option value="City Center">Mahabalipuram</option>
+                                    <option value="Tech Park">Kovalam</option>
+                                    <option value="South Gate">Sholinganallur</option>
+                                    <option value="East Airport">Chennai Airport</option>
+                                </select>
+                                <button class="btn btn-outline-info" type="button" id="setDemoLocationBtn">Set</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-2 d-flex align-items-center gap-2">
+                            <label class="text-secondary small mb-0 text-nowrap">Interval:</label>
+                            <select class="form-select form-select-sm bg-dark text-white border-secondary w-auto" id="demoIntervalSelect">
+                                <option value="5000">5s</option>
+                                <option value="10000" selected>10s</option>
+                                <option value="15000">15s</option>
+                            </select>
+                            <button class="btn btn-sm btn-warning w-100" id="toggleDemoTripBtn">Start Demo Trip</button>
                         </div>
                     </div>
                 </div>
@@ -87,77 +172,93 @@
     <div class="col-lg-8 animate-fade-in delay-1">
         <div class="glass-card p-4 text-center">
             <h4 class="text-white mb-2 text-start"><i class="bi bi-bus-front-fill text-primary me-2"></i>Live Seat Occupancy Map</h4>
-            <p class="text-secondary small text-start mb-4">Click a seat to toggle between <span class="badge bg-success">Available</span> and <span class="badge bg-danger">Occupied</span> states.</p>
+            <p class="text-secondary small text-start mb-4">Seats status automatically synchronized with MySQL database. Manual toggling is disabled.</p>
 
-            <div class="bus-layout mb-4">
+            <div class="bus-layout mb-4" style="max-width: 420px; margin: 0 auto; background: rgba(0,0,0,0.25); padding: 20px; border-radius: 15px; border: 1px solid var(--border-color);">
                 <div class="driver-cabin d-flex justify-content-between align-items-center mb-4">
                     <span><i class="bi bi-life-preserver me-1"></i> Driver Console</span>
                     <span>Entrance <i class="bi bi-arrow-right-short"></i></span>
                 </div>
                 
-                <!-- Seat Map rows -->
-                <div class="d-flex flex-column gap-3">
-                    <!-- Row 1 -->
-                    <div class="d-flex justify-content-between">
-                        <div class="d-flex gap-2">
-                            <div class="bus-seat available" data-seat="1">1</div>
-                            <div class="bus-seat occupied" data-seat="2">2</div>
+                <!-- Seat Map rows (60 Seats total) -->
+                <div class="d-flex flex-column gap-3" style="max-height: 480px; overflow-y: auto; padding-right: 5px;">
+                    {% for row_idx in range(15) %}
+                        {% set start_idx = row_idx * 4 %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <!-- Left 2 seats -->
+                            <div class="d-flex gap-2">
+                                {% for seat in seats[start_idx : start_idx + 2] %}
+                                    <div class="bus-seat {% if seat.status == 'Available' %}available{% elif seat.status == 'Occupied' %}occupied{% else %}reserved{% endif %}" 
+                                         data-seat="{{ seat.seat_number }}">
+                                        {{ seat.seat_number }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Aisle Gap Spacer -->
+                            <div class="aisle-spacer text-secondary text-uppercase small" style="width: 50px; font-size: 0.7rem; letter-spacing: 1px;">Aisle</div>
+                            
+                            <!-- Right 2 seats -->
+                            <div class="d-flex gap-2">
+                                {% for seat in seats[start_idx + 2 : start_idx + 4] %}
+                                    <div class="bus-seat {% if seat.status == 'Available' %}available{% elif seat.status == 'Occupied' %}occupied{% else %}reserved{% endif %}" 
+                                         data-seat="{{ seat.seat_number }}">
+                                        {{ seat.seat_number }}
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <div class="bus-seat available" data-seat="3">3</div>
-                            <div class="bus-seat available" data-seat="4">4</div>
-                        </div>
-                    </div>
-                    <!-- Row 2 -->
-                    <div class="d-flex justify-content-between">
-                        <div class="d-flex gap-2">
-                            <div class="bus-seat occupied" data-seat="5">5</div>
-                            <div class="bus-seat occupied" data-seat="6">6</div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <div class="bus-seat available" data-seat="7">7</div>
-                            <div class="bus-seat occupied" data-seat="8">8</div>
-                        </div>
-                    </div>
-                    <!-- Row 3 -->
-                    <div class="d-flex justify-content-between">
-                        <div class="d-flex gap-2">
-                            <div class="bus-seat occupied" data-seat="9">9</div>
-                            <div class="bus-seat occupied" data-seat="10">10</div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <div class="bus-seat available" data-seat="11">11</div>
-                            <div class="bus-seat available" data-seat="12">12</div>
-                        </div>
-                    </div>
-                    <!-- Row 4 -->
-                    <div class="d-flex justify-content-between">
-                        <div class="d-flex gap-2">
-                            <div class="bus-seat available" data-seat="13">13</div>
-                            <div class="bus-seat occupied" data-seat="14">14</div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <div class="bus-seat occupied" data-seat="15">15</div>
-                            <div class="bus-seat occupied" data-seat="16">16</div>
-                        </div>
-                    </div>
-                    <!-- Row 5 (Aisle spacer / Back Row) -->
-                    <div class="d-flex justify-content-between">
-                        <div class="d-flex gap-2">
-                            <div class="bus-seat available" data-seat="17">17</div>
-                            <div class="bus-seat available" data-seat="18">18</div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <div class="bus-seat occupied" data-seat="19">19</div>
-                            <div class="bus-seat occupied" data-seat="20">20</div>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
             
             <div class="d-flex justify-content-center gap-4 text-secondary small">
                 <div><span class="d-inline-block bg-success rounded-circle me-1" style="width:12px; height:12px;"></span> Available</div>
                 <div><span class="d-inline-block bg-danger rounded-circle me-1" style="width:12px; height:12px;"></span> Occupied</div>
+                <div><span class="d-inline-block bg-secondary rounded-circle me-1" style="width:12px; height:12px;"></span> Reserved</div>
+            </div>
+        </div>
+
+        <!-- Live Route visualization -->
+        <div class="glass-card p-4 mt-4 text-start">
+            <h4 class="text-white mb-3"><i class="bi bi-map text-primary me-2"></i>Live Bus Route</h4>
+            
+            <div class="p-3 rounded bg-dark bg-opacity-50 border border-secondary mb-4">
+                <div class="d-flex justify-content-between text-secondary small mb-2">
+                    <span>BUS: <strong class="text-white">{{ bus.bus_number }}</strong></span>
+                    <span>ROUTE: <strong class="text-white">Chennai Central ➔ Chennai Airport</strong></span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="text-start" style="width: 25%">
+                        <span class="d-block text-secondary small">FROM:</span>
+                        <strong class="text-white">Chennai Central</strong>
+                    </div>
+                    <div class="text-center" style="width: 25%">
+                        <span class="d-block text-secondary small">CURRENT LOCATION:</span>
+                        <strong class="text-warning" id="routeCurrentStop">Chennai Central</strong>
+                    </div>
+                    <div class="text-center" style="width: 25%">
+                        <span class="d-block text-secondary small">NEXT STOP:</span>
+                        <strong class="text-info" id="routeNextStop">Guindy</strong>
+                    </div>
+                    <div class="text-end" style="width: 25%">
+                        <span class="d-block text-secondary small">TO:</span>
+                        <strong class="text-white">Chennai Airport</strong>
+                    </div>
+                </div>
+
+                <div class="position-relative mt-3 mb-2 px-3">
+                    <div class="progress" style="height: 6px; background: rgba(255,255,255,0.1);">
+                        <div class="progress-bar bg-primary" id="routeProgressBar" style="width: 0%"></div>
+                    </div>
+                    <!-- Markers will be rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Vertical Route List -->
+            <div class="d-flex flex-column gap-2" id="verticalRouteList">
+                <!-- Generated by JS -->
             </div>
         </div>
 
@@ -180,10 +281,10 @@
                         {% for ticket in tickets %}
                         <tr class="border-bottom border-white border-opacity-5">
                             <td class="font-weight-semibold">#{{ ticket.ticket_id }}</td>
-                            <td>{{ ticket.source_stop }}</td>
-                            <td>{{ ticket.destination_stop }}</td>
+                            <td>{{ ticket.source_stop|alias }}</td>
+                            <td>{{ ticket.destination_stop|alias }}</td>
                             <td><span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-2.5 py-1">{{ ticket.passenger_count }}</span></td>
-                            <td>${{ ticket.fare }}</td>
+                            <td>₹{{ ticket.fare }}</td>
                             <td class="small text-secondary">{{ ticket.ticket_date }} {{ ticket.ticket_time }}</td>
                         </tr>
                         {% else %}
@@ -198,31 +299,270 @@
     </div>
 </div>
 
+<!-- GPS Geolocation and Simulation Script -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    // Dynamic interactive client toggles for seats
-    const seats = document.querySelectorAll(".bus-seat");
-    const countLabel = document.getElementById("occupiedCountLabel");
+    const gpsStatusText = document.getElementById("gpsStatusText");
+    const currentStopText = document.getElementById("currentStopText");
+    const lastUpdatedText = document.getElementById("lastUpdatedText");
+    const latText = document.getElementById("latText");
+    const lonText = document.getElementById("lonText");
     
-    seats.forEach(seat => {
-        seat.addEventListener("click", () => {
-            if (seat.classList.contains("available")) {
-                seat.classList.remove("available");
-                seat.classList.add("occupied");
-            } else {
-                seat.classList.remove("occupied");
-                seat.classList.add("available");
-            }
-            updateCounts();
-        });
-    });
+    // Demo Mode Elements
+    const gpsRealRadio = document.getElementById("gpsReal");
+    const gpsDemoRadio = document.getElementById("gpsDemo");
+    const demoControls = document.getElementById("demoControls");
+    const demoActiveBadge = document.getElementById("demoActiveBadge");
+    const setDemoLocationBtn = document.getElementById("setDemoLocationBtn");
+    const demoStopSelect = document.getElementById("demoStopSelect");
+    const demoIntervalSelect = document.getElementById("demoIntervalSelect");
+    const toggleDemoTripBtn = document.getElementById("toggleDemoTripBtn");
+
+    let isDemoMode = false;
+    let realGpsWatchId = null;
+    let demoTripIntervalId = null;
+    let simIndex = 0;
+
+    const coordsList = {
+        "Central Station": { lat: 13.0827, lon: 80.2707 },
+        "Oak Avenue": { lat: 13.0067, lon: 80.2206 },
+        "Maple Road": { lat: 12.9249, lon: 80.1000 },
+        "Aisle Street": { lat: 12.6819, lon: 79.9788 },
+        "City Center": { lat: 12.6269, lon: 80.1927 },
+        "Tech Park": { lat: 12.7948, lon: 80.2505 },
+        "South Gate": { lat: 12.9010, lon: 80.2279 },
+        "East Airport": { lat: 12.9716, lon: 80.1836 }
+    };
     
-    function updateCounts() {
-        const occupied = document.querySelectorAll(".bus-seat.occupied").length;
-        if (countLabel) {
-            countLabel.textContent = occupied;
+    const aliasMap = {
+        "Central Station": "Chennai Central",
+        "Oak Avenue": "Guindy",
+        "Maple Road": "Tambaram",
+        "Aisle Street": "Chengalpattu",
+        "City Center": "Mahabalipuram",
+        "Tech Park": "Kovalam",
+        "South Gate": "Sholinganallur",
+        "East Airport": "Chennai Airport"
+    };
+    
+    const stopsArray = Object.keys(coordsList);
+
+    function renderLiveRoute(currentStopInternal) {
+        const routeCurrentStop = document.getElementById("routeCurrentStop");
+        const routeNextStop = document.getElementById("routeNextStop");
+        const routeProgressBar = document.getElementById("routeProgressBar");
+        const verticalRouteList = document.getElementById("verticalRouteList");
+
+        let currIndex = stopsArray.indexOf(currentStopInternal);
+        if (currIndex === -1) currIndex = 0;
+        
+        const nextIndex = Math.min(currIndex + 1, stopsArray.length - 1);
+        
+        if (routeCurrentStop) routeCurrentStop.textContent = aliasMap[currentStopInternal] || currentStopInternal;
+        if (routeNextStop) routeNextStop.textContent = aliasMap[stopsArray[nextIndex]] || stopsArray[nextIndex];
+        
+        if (routeProgressBar) {
+            const pct = (currIndex / (stopsArray.length - 1)) * 100;
+            routeProgressBar.style.width = pct + "%";
+        }
+        
+        if (verticalRouteList) {
+            let html = "";
+            stopsArray.forEach((stopInternal, idx) => {
+                const alias = aliasMap[stopInternal];
+                let statusHtml = "";
+                let bgClass = "bg-dark bg-opacity-25 text-secondary border-secondary border-opacity-25";
+                let icon = `<i class="bi bi-circle"></i>`;
+                
+                if (idx < currIndex) {
+                    statusHtml = `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1"><i class="bi bi-check2"></i> Completed</span>`;
+                    bgClass = "bg-success bg-opacity-10 text-success border-success border-opacity-25";
+                    icon = `<i class="bi bi-check-circle-fill"></i>`;
+                } else if (idx === currIndex) {
+                    statusHtml = `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1"><i class="bi bi-bus-front-fill"></i> CURRENT LOCATION</span>`;
+                    bgClass = "bg-warning bg-opacity-10 text-warning border-warning border-opacity-50";
+                    icon = `<i class="bi bi-bus-front-fill"></i>`;
+                } else {
+                    statusHtml = `<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1">Upcoming</span>`;
+                }
+                
+                html += `
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded border ${bgClass}">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-5">${icon}</div>
+                            <strong style="${idx === currIndex ? 'font-size:1.1rem;' : ''}">${alias}</strong>
+                        </div>
+                        <div>${statusHtml}</div>
+                    </div>
+                `;
+            });
+            verticalRouteList.innerHTML = html;
         }
     }
+
+    function sendLocation(lat, lon, demoModeFlag = false) {
+        const busNum = document.getElementById('busIdentifier').textContent.trim() || 'NS-B01';
+        fetch('/gps/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                latitude: lat,
+                longitude: lon,
+                bus_number: busNum,
+                demo_mode: demoModeFlag
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (gpsStatusText) {
+                    if (demoModeFlag) {
+                        gpsStatusText.innerHTML = '<i class="bi bi-broadcast text-warning me-1"></i> Simulated (Demo)';
+                        gpsStatusText.className = "text-warning";
+                    } else {
+                        gpsStatusText.innerHTML = '<i class="bi bi-broadcast text-success me-1"></i> Online (Active Feed)';
+                        gpsStatusText.className = "text-success";
+                    }
+                }
+                const displayStop = aliasMap[data.detected_stop] || data.detected_stop;
+                if (currentStopText) currentStopText.textContent = displayStop;
+                if (lastUpdatedText) lastUpdatedText.textContent = new Date().toLocaleString();
+                if (latText) latText.textContent = lat.toFixed(5);
+                if (lonText) lonText.textContent = lon.toFixed(5);
+                
+                renderLiveRoute(data.detected_stop);
+                
+                // Keep select synced if in demo mode
+                if (demoModeFlag && demoStopSelect.value !== data.detected_stop) {
+                    demoStopSelect.value = data.detected_stop;
+                    simIndex = stopsArray.indexOf(data.detected_stop);
+                }
+                
+                if (data.exited_passengers > 0) {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-info alert-dismissible fade show glass-card border-0 py-3 mb-4';
+                    alertDiv.innerHTML = `
+                        <div class="d-flex align-items-center animate-fade-in">
+                            <i class="bi bi-info-circle-fill text-info fs-4 me-3"></i>
+                            <div class="text-white">${data.exited_passengers} passenger(s) reached destination stop and exited at ${displayStop}. Seating capacities freed.</div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    document.querySelector('main .container').prepend(alertDiv);
+                    
+                    // Auto-reload to show updated dashboards
+                    setTimeout(() => { window.location.reload(); }, 2000);
+                }
+            }
+        })
+        .catch(err => {
+            console.error("GPS Update failed", err);
+            if (gpsStatusText) {
+                gpsStatusText.textContent = "Feed Error";
+                gpsStatusText.className = "text-danger";
+            }
+        });
+    }
+
+    function startRealGPS() {
+        stopDemoTrip();
+        if (navigator.geolocation) {
+            if (gpsStatusText) gpsStatusText.textContent = "Locating...";
+            realGpsWatchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    if (!isDemoMode) {
+                        sendLocation(pos.coords.latitude, pos.coords.longitude, false);
+                    }
+                },
+                (err) => {
+                    console.warn("Real GPS access denied or unavailable", err);
+                    if (gpsStatusText) {
+                        gpsStatusText.textContent = "No GPS Access";
+                        gpsStatusText.className = "text-danger";
+                    }
+                },
+                { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+            );
+        } else {
+            if (gpsStatusText) gpsStatusText.textContent = "Unsupported";
+        }
+    }
+
+    function stopRealGPS() {
+        if (realGpsWatchId !== null && navigator.geolocation) {
+            navigator.geolocation.clearWatch(realGpsWatchId);
+            realGpsWatchId = null;
+        }
+    }
+
+    function stopDemoTrip() {
+        if (demoTripIntervalId) {
+            clearInterval(demoTripIntervalId);
+            demoTripIntervalId = null;
+            toggleDemoTripBtn.textContent = "Start Demo Trip";
+            toggleDemoTripBtn.classList.replace("btn-danger", "btn-warning");
+        }
+    }
+
+    // Toggle Modes
+    function updateMode() {
+        isDemoMode = gpsDemoRadio.checked;
+        if (isDemoMode) {
+            stopRealGPS();
+            demoControls.classList.remove("d-none");
+            demoActiveBadge.classList.remove("d-none");
+            if (gpsStatusText) {
+                gpsStatusText.textContent = "Demo Mode Ready";
+                gpsStatusText.className = "text-warning";
+            }
+        } else {
+            demoControls.classList.add("d-none");
+            demoActiveBadge.classList.add("d-none");
+            startRealGPS();
+        }
+    }
+
+    gpsRealRadio.addEventListener("change", updateMode);
+    gpsDemoRadio.addEventListener("change", updateMode);
+
+    // Set Demo Location manually
+    setDemoLocationBtn.addEventListener("click", () => {
+        if (!isDemoMode) return;
+        stopDemoTrip();
+        const selectedStop = demoStopSelect.value;
+        const c = coordsList[selectedStop];
+        if (c) {
+            simIndex = stopsArray.indexOf(selectedStop);
+            sendLocation(c.lat, c.lon, true);
+        }
+    });
+
+    // Toggle Demo Trip
+    toggleDemoTripBtn.addEventListener("click", () => {
+        if (!isDemoMode) return;
+        if (demoTripIntervalId) {
+            stopDemoTrip();
+        } else {
+            // Start trip
+            toggleDemoTripBtn.textContent = "Stop Demo Trip";
+            toggleDemoTripBtn.classList.replace("btn-warning", "btn-danger");
+            const intervalMs = parseInt(demoIntervalSelect.value) || 10000;
+            
+            // immediately trigger next
+            simIndex = (simIndex + 1) % stopsArray.length;
+            const nextStop = stopsArray[simIndex];
+            sendLocation(coordsList[nextStop].lat, coordsList[nextStop].lon, true);
+
+            demoTripIntervalId = setInterval(() => {
+                simIndex = (simIndex + 1) % stopsArray.length;
+                const nextStop = stopsArray[simIndex];
+                sendLocation(coordsList[nextStop].lat, coordsList[nextStop].lon, true);
+            }, intervalMs);
+        }
+    });
+
+    // Initialize
+    updateMode();
 });
 </script>
 {% endblock %}

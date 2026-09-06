@@ -55,6 +55,15 @@
                                 <a class="nav-link nav-link-custom {% if request.path == '/admin/reports' %}active{% endif %}" href="{{ url_for('admin_reports') }}">Reports</a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link nav-link-custom {% if request.path == '/gps/tracking' %}active{% endif %}" href="{{ url_for('gps_tracking') }}">Live Tracking</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom {% if request.path == '/admin/ml/dashboard' %}active{% endif %}" href="{{ url_for('ml.ml_dashboard') }}">ML Predictions</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom {% if request.path == '/trip-history' %}active{% endif %}" href="{{ url_for('trip_history') }}">Trip History</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link nav-link-custom {% if request.path == '/admin/profile' %}active{% endif %}" href="{{ url_for('admin_profile') }}">Profile</a>
                             </li>
                         {% elif user_role == 'conductor' %}
@@ -66,6 +75,12 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link nav-link-custom {% if request.path == '/conductor/occupancy' %}active{% endif %}" href="{{ url_for('tickets.occupancy_dashboard') }}">Occupancy Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom {% if request.path == '/gps/tracking' %}active{% endif %}" href="{{ url_for('gps_tracking') }}">Live Tracking</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom {% if request.path == '/trip-history' %}active{% endif %}" href="{{ url_for('trip_history') }}">Trip History</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link nav-link-custom {% if request.path == '/conductor/profile' %}active{% endif %}" href="{{ url_for('conductor_profile') }}">Profile</a>
@@ -152,10 +167,10 @@
             <div class="row align-items-center g-3">
                 <div class="col-md-6 text-center text-md-start">
                     <span class="text-white font-weight-bold d-block mb-1">NextStop: Smart Bus Occupancy System</span>
-                    <span class="text-secondary small">Developed by Kanishka V | Dept of Computer Science & Engineering</span>
+                    <span class="text-secondary small">Smart Transit Management System Console</span>
                 </div>
                 <div class="col-md-6 text-center text-md-end">
-                    <span class="text-secondary small d-block mb-1">College Project | Contact: support@nextstop.com</span>
+                    <span class="text-secondary small d-block mb-1">AI-Powered Public Transportation Optimizer</span>
                     <span class="text-secondary small">&copy; 2026 NextStop. All rights reserved.</span>
                 </div>
             </div>

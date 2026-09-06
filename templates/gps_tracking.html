@@ -1,0 +1,184 @@
+<!-- templates/gps_tracking.html -->
+<!-- NextStop - Real-Time GPS Map Page -->
+{% extends 'base.html' %}
+
+{% block title %}GPS Live Fleet Tracking - NextStop Transit{% endblock %}
+
+{% block content %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+<div class="row g-4 animate-fade-in py-3">
+    <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h2 class="text-white font-weight-bold mb-1">Live Fleet Location Tracking</h2>
+                <p class="text-secondary mb-0">Continuously feeding spatial coordinates for bus <strong class="text-white">{{ bus_number }}</strong>.</p>
+            </div>
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill">
+                <i class="bi bi-geo-alt-fill me-1"></i> GPS Feed Enabled
+            </span>
+        </div>
+    </div>
+
+    <!-- Map Area Card -->
+    <div class="col-lg-8">
+        <div class="glass-card p-2" style="height: 520px; overflow: hidden; border-radius: 15px;">
+            <div id="map" style="width: 100%; height: 100%; border-radius: 12px; z-index: 1;"></div>
+        </div>
+    </div>
+
+    <!-- GPS Feeds Metadata Panel -->
+    <div class="col-lg-4">
+        <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+            <div>
+                <h4 class="text-white mb-3">Live Feed Telemetry</h4>
+                
+                <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5 mb-4 small">
+                    <div class="mb-3">
+                        <span class="text-secondary small d-block">Active Bus</span>
+                        <strong class="text-white fs-5">{{ bus_number }}</strong>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-secondary small d-block">Identified Stop</span>
+                        <strong class="text-success fs-6" id="mapStopText">Central Station</strong>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <span class="text-secondary small d-block">Latitude</span>
+                            <strong class="text-white" id="mapLatText">12.97160</strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-secondary small d-block">Longitude</span>
+                            <strong class="text-white" id="mapLonText">77.59460</strong>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-secondary small d-block">Telemetry Timestamp</span>
+                        <span class="text-secondary" id="mapTimestampText">-</span>
+                    </div>
+                </div>
+
+                <div class="alert alert-info bg-info bg-opacity-10 border-0 p-3 text-secondary small">
+                    <i class="bi bi-info-circle-fill text-info me-1"></i> Feeds update every 10 seconds. Marker changes position dynamically.
+                </div>
+            </div>
+
+            <div>
+                {% if user_role == 'admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary-custom w-100 mb-2">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Admin Dashboard
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('conductor_dashboard') }}" class="btn btn-secondary-custom w-100 mb-2">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const busNumber = "{{ bus_number }}";
+    
+    // Initialize map on Chennai Central
+    const defaultLat = 13.0827;
+    const defaultLon = 80.2707;
+    
+    const map = L.map('map').setView([defaultLat, defaultLon], 12);
+    
+    // Load OSM Map Tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Predefined Chennai demo route coordinates
+    const routeCoords = [
+        [13.0827, 80.2707], // Chennai Central
+        [13.0067, 80.2206], // Guindy
+        [12.9249, 80.1000], // Tambaram
+        [12.6819, 79.9788], // Chengalpattu
+        [12.6269, 80.1927], // Mahabalipuram
+        [12.7948, 80.2505], // Kovalam
+        [12.9010, 80.2279], // Sholinganallur
+        [12.9716, 80.1836]  // Chennai Airport
+    ];
+
+    const aliasMap = {
+        "Central Station": "Chennai Central",
+        "Oak Avenue": "Guindy",
+        "Maple Road": "Tambaram",
+        "Aisle Street": "Chengalpattu",
+        "City Center": "Mahabalipuram",
+        "Tech Park": "Kovalam",
+        "South Gate": "Sholinganallur",
+        "East Airport": "Chennai Airport"
+    };
+
+    // Draw the route line
+    const routeLine = L.polyline(routeCoords, {
+        color: '#0d6efd',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '10, 10'
+    }).addTo(map);
+
+    // Add small markers for each stop
+    routeCoords.forEach(coord => {
+        L.circleMarker(coord, {
+            radius: 4,
+            fillColor: "#fff",
+            color: "#000",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 1
+        }).addTo(map);
+    });
+
+    // Custom Bus Marker
+    const busIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: var(--primary-color); border: 2px solid white; width: 28px; height: 28px; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white;"><i class="bi bi-bus-front" style="font-size: 0.9rem;"></i></div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+    });
+
+    const marker = L.marker([defaultLat, defaultLon], { icon: busIcon }).addTo(map);
+    marker.bindPopup(`<strong>Bus ${busNumber}</strong><br>Loading Location...`).openPopup();
+
+    function updateLiveFeed() {
+        fetch(`/gps/location?bus_number=${busNumber}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.latitude && data.longitude) {
+                    const lat = parseFloat(data.latitude);
+                    const lon = parseFloat(data.longitude);
+                    const stop = data.current_stop;
+                    const displayStop = aliasMap[stop] || stop;
+                    
+                    // Pan map and marker position
+                    map.panTo([lat, lon]);
+                    marker.setLatLng([lat, lon]);
+                    marker.setPopupContent(`<strong>Bus ${busNumber}</strong><br>Stop: ${displayStop}`).openPopup();
+                    
+                    // Update metadata fields
+                    document.getElementById("mapLatText").textContent = lat.toFixed(5);
+                    document.getElementById("mapLonText").textContent = lon.toFixed(5);
+                    document.getElementById("mapStopText").textContent = displayStop;
+                    document.getElementById("mapTimestampText").textContent = data.last_updated;
+                }
+            })
+            .catch(err => console.error("Telemetry fetch failed", err));
+    }
+
+    // Initial load and periodic updates
+    updateLiveFeed();
+    setInterval(updateLiveFeed, 10000);
+});
+</script>
+{% endblock %}

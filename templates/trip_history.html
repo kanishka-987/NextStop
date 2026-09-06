@@ -1,0 +1,111 @@
+<!-- templates/trip_history.html -->
+<!-- NextStop - Trip History log registry -->
+{% extends 'base.html' %}
+
+{% block title %}Trip History - NextStop Transit{% endblock %}
+
+{% block content %}
+<div class="row g-4 animate-fade-in py-3">
+    <!-- Header Summary -->
+    <div class="col-12 d-flex flex-wrap align-items-center justify-content-between">
+        <div>
+            <h2 class="text-white font-weight-bold mb-1">Passenger Trip Registry</h2>
+            <p class="text-secondary mb-0">Historical logs of boarding details, exit markers, and assigned seats.</p>
+        </div>
+        <button class="btn btn-secondary-custom" onclick="window.location.reload();">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh Logs
+        </button>
+    </div>
+
+    <!-- Filtering Panel -->
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <form action="{{ url_for('trip_history') }}" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="bus_number" class="form-label text-secondary small">Filter by Bus Number</label>
+                    <select name="bus_number" id="bus_number" class="form-select form-select-custom">
+                        <option value="">-- All Buses --</option>
+                        <option value="NS-B01" {% if bus_filter == 'NS-B01' %}selected{% endif %}>Bus NS-B01</option>
+                        <option value="NS-B02" {% if bus_filter == 'NS-B02' %}selected{% endif %}>Bus NS-B02</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="time_filter" class="form-label text-secondary small">Filter by Time Frame</label>
+                    <select name="time_filter" id="time_filter" class="form-select form-select-custom">
+                        <option value="today" {% if time_filter == 'today' %}selected{% endif %}>Today</option>
+                        <option value="shift" {% if time_filter == 'shift' %}selected{% endif %}>Current Shift (Last 8h)</option>
+                        <option value="all" {% if time_filter == 'all' %}selected{% endif %}>All Records</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary-custom w-100 py-2.5">
+                        <i class="bi bi-funnel me-1"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle border-0 mb-0">
+                    <thead>
+                        <tr class="text-secondary border-bottom border-white border-opacity-10">
+                            <th>Ticket ID</th>
+                            <th>Bus Number</th>
+                            <th>Source</th>
+                            <th>Destination</th>
+                            <th>Boarding Time</th>
+                            <th>Exit Time</th>
+                            <th>Seat Number</th>
+                            <th>Fare</th>
+                            <th>Journey Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-white">
+                        {% for ticket in tickets %}
+                        <tr class="border-bottom border-white border-opacity-5">
+                            <td class="font-weight-semibold">#{{ ticket.ticket_id }}</td>
+                            <td>{{ ticket.bus_number }}</td>
+                            <td>{{ ticket.source_stop|alias }}</td>
+                            <td>{{ ticket.destination_stop|alias }}</td>
+                            <td class="small">{{ ticket.boarding_time or ticket.ticket_time }}</td>
+                            <td class="small">
+                                {% if ticket.exit_time %}
+                                    <span class="text-success font-weight-semibold">{{ ticket.exit_time }}</span>
+                                {% else %}
+                                    <span class="text-secondary">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if 'Standing' in ticket.assigned_seat %}
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">Standing</span>
+                                {% else %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">{{ ticket.assigned_seat }}</span>
+                                {% endif %}
+                            </td>
+                            <td>₹{{ ticket.fare }}</td>
+                            <td>
+                                {% if ticket.ticket_status == 'Active' %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">In Transit</span>
+                                {% else %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">Completed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center text-secondary py-5">
+                                <i class="bi bi-clipboard-x fs-1 d-block mb-3"></i> No trip history records match the selected filters.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

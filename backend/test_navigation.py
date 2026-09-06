@@ -19,7 +19,7 @@ def test_navigation_and_features():
         ("/", "NextStop:"),
         ("/about", "About NextStop Project"),
         ("/features", "Core System Features"),
-        ("/contact", "Contact & Support"),
+        ("/contact", "About NextStop Transit"),
         ("/login", "Welcome Back"),
         ("/register", "Create Conductor Account")
     ]

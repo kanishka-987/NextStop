@@ -73,15 +73,22 @@
                 </div>
 
                 <!-- Action Button -->
-                <button type="submit" class="btn btn-primary-custom w-100 py-2.5 mb-3">
+                <button type="submit" class="btn btn-primary-custom w-100 py-2.5 mb-3" id="submitBtn">
                     <i class="bi bi-box-arrow-in-right me-2"></i> Log In
                 </button>
 
-                <div class="text-center mt-3">
-                    <span class="text-secondary small">Don't have an account?</span>
-                    <a href="{{ url_for('auth.register') }}" class="text-decoration-none text-primary ms-1 small">
-                        Register as Conductor
-                    </a>
+                <div class="text-center mt-3 d-flex flex-column gap-2">
+                    <div>
+                        <span class="text-secondary small">Don't have an account?</span>
+                        <a href="{{ url_for('auth.register') }}" class="text-decoration-none text-primary ms-1 small">
+                            Register as Conductor
+                        </a>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('auth.admin_register') }}" class="text-decoration-none text-secondary small hover:text-white transition">
+                            Register as Admin
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>

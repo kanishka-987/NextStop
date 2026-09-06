@@ -1,0 +1,75 @@
+<!-- templates/add_bus.html -->
+<!-- NextStop - Add Bus Form -->
+{% extends 'base.html' %}
+
+{% block title %}Add New Bus - NextStop Admin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-100 py-5 animate-fade-in">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="glass-card p-5">
+            <div class="text-center mb-4">
+                <i class="bi bi-bus-front-fill display-4 text-primary mb-3"></i>
+                <h2 class="text-white font-weight-bold">Register New Bus</h2>
+                <p class="text-secondary">Add a new transit vehicle to the network fleet.</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('admin_add_bus') }}" class="needs-validation">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="bus_number" name="bus_number" placeholder="NS-B02" required>
+                            <label for="bus_number">Bus Number (Identifier)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="bus_type" name="bus_type" placeholder="Volvo City Liner" required>
+                            <label for="bus_type">Bus Type / Model</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="route_name" name="route_name" placeholder="Route 5 - Tech Park" required>
+                            <label for="route_name">Route Name / Assignment</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control" id="seat_capacity" name="seat_capacity" value="60" min="0" required>
+                            <label for="seat_capacity">Physical Seat Capacity</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control" id="standing_capacity" name="standing_capacity" value="20" min="0" required>
+                            <label for="standing_capacity">Standing Capacity</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="form-floating mb-4">
+                            <select class="form-select" id="status" name="status">
+                                <option value="active" selected>Active (In Service)</option>
+                                <option value="inactive">Inactive (Maintenance)</option>
+                            </select>
+                            <label for="status">Initial Status</label>
+                        </div>
+                    </div>
+
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary-custom w-100 flex-grow-1 py-3 font-weight-bold">
+                            <i class="bi bi-check-circle me-1"></i> Register Bus
+                        </button>
+                        <a href="{{ url_for('admin_buses') }}" class="btn btn-secondary-custom py-3 px-4">
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

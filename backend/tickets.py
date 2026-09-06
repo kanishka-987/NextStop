@@ -1,15 +1,14 @@
 # backend/tickets.py
 # NextStop Project - Ticket Management Blueprint
-# Handles ticket generation, MySQL storage, occupancy calculations, and bus capacity verification.
+# Implements automatic seat allocation, standing capacity overflow, and real-time occupancy.
 
 import os
-from flask import Blueprint, render_template, redirect, url_for, request, session, flash
+from flask import Blueprint, render_template, redirect, url_for, request, session, flash, jsonify
 from backend.db_connection import get_db_connection
 from backend.auth import login_required
 import mysql.connector
 from datetime import datetime
 
-# Create the Ticket Blueprint
 tickets_bp = Blueprint('tickets', __name__)
 
 @tickets_bp.route('/conductor/tickets/generate', methods=['GET', 'POST'])
@@ -17,16 +16,21 @@ tickets_bp = Blueprint('tickets', __name__)
 def generate_ticket():
     """
     Renders the ticket generation form for conductors.
-    Validates bus capacity and records tickets in MySQL.
+    Handles seating capacity (60) and standing capacity (20) auto-allocation.
     """
     conn = None
     cursor = None
     
-    # Fetch list of active buses for dropdown selection
+    # Fetch active buses for dropdown selection
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT bus_number, seat_capacity, standing_capacity, current_occupancy FROM occupancy")
+        cursor.execute("""
+            SELECT o.bus_number, o.seat_capacity, o.standing_capacity, o.current_occupancy, b.route_name 
+            FROM occupancy o
+            JOIN buses b ON o.bus_number = b.bus_number
+            WHERE b.status = 'active'
+        """)
         buses = cursor.fetchall()
     except mysql.connector.Error as err:
         flash(f"Error fetching buses: {err}", "danger")
@@ -46,8 +50,8 @@ def generate_ticket():
         ticket_time = request.form.get('ticket_time', '').strip()
 
         # 1. Validation: Empty Fields
-        if not (bus_number and source_stop and destination_stop and passenger_count_str and fare_str and ticket_date and ticket_time):
-            flash("All fields are required. Please fill in the ticket form completely.", "warning")
+        if not (bus_number and source_stop and destination_stop and passenger_count_str and ticket_date and ticket_time):
+            flash("All fields except fare are required. Please fill in the ticket form completely.", "warning")
             return render_template('generate_ticket.html', buses=buses, bus_number=bus_number, 
                                    source_stop=source_stop, destination_stop=destination_stop, 
                                    passenger_count=passenger_count_str, fare=fare_str, 
@@ -65,12 +69,23 @@ def generate_ticket():
                                    passenger_count=passenger_count_str, fare=fare_str, 
                                    ticket_date=ticket_date, ticket_time=ticket_time)
 
+        # 3. Automatic Fare Calculation
+        ROUTE_STOPS = [
+            'Central Station', 'Oak Avenue', 'Maple Road', 'Aisle Street',
+            'City Center', 'Tech Park', 'South Gate', 'East Airport'
+        ]
         try:
-            fare = float(fare_str)
-            if fare < 0:
-                raise ValueError("Fare cannot be negative.")
+            src_idx = ROUTE_STOPS.index(source_stop)
+            dst_idx = ROUTE_STOPS.index(destination_stop)
+            segments = dst_idx - src_idx
+            if segments <= 0:
+                raise ValueError("Invalid destination stop.")
+            
+            base_fare_per_pax = 15 + (segments - 1) * 5
+            fare = float(base_fare_per_pax * passenger_count)
+            fare_str = str(fare)
         except ValueError:
-            flash("Invalid fare amount. Must be a non-negative number.", "warning")
+            flash("Invalid source or destination stop selected.", "warning")
             return render_template('generate_ticket.html', buses=buses, bus_number=bus_number, 
                                    source_stop=source_stop, destination_stop=destination_stop, 
                                    passenger_count=passenger_count_str, fare=fare_str, 
@@ -79,7 +94,6 @@ def generate_ticket():
         # 3. Capacity verification and database transaction
         try:
             conn = get_db_connection()
-            # Turn off autocommit to handle transaction safely
             conn.autocommit = False
             cursor = conn.cursor(dictionary=True)
             
@@ -92,39 +106,66 @@ def generate_ticket():
                 flash(f"Error: Selected bus '{bus_number}' does not exist in occupancy registries.", "danger")
                 return render_template('generate_ticket.html', buses=buses)
             
-            seat_capacity = bus_record['seat_capacity']
-            standing_capacity = bus_record['standing_capacity']
+            seat_capacity = bus_record['seat_capacity']  # 60
+            standing_capacity = bus_record['standing_capacity']  # 20
             current_occupancy = bus_record['current_occupancy']
-            total_capacity = seat_capacity + standing_capacity
+            total_capacity = seat_capacity + standing_capacity  # 80
             
-            # Check capacity limits
+            # Block ticket generation only when combined capacity is exceeded
             if current_occupancy + passenger_count > total_capacity:
                 conn.rollback()
-                # Exact requested text to display: "Bus Full - Ticket Cannot Be Generated"
-                flash("Bus Full - Ticket Cannot Be Generated", "danger")
+                # Exact requested text to display: "Bus has reached its maximum capacity. Ticket cannot be generated."
+                flash("Bus has reached its maximum capacity. Ticket cannot be generated.", "danger")
                 return render_template('generate_ticket.html', buses=buses, bus_number=bus_number, 
                                        source_stop=source_stop, destination_stop=destination_stop, 
                                        passenger_count=passenger_count_str, fare=fare_str, 
                                        ticket_date=ticket_date, ticket_time=ticket_time)
 
-            # Insert Ticket record
+            # Query available physical seats
+            cursor.execute("""
+                SELECT seat_number FROM seat_status 
+                WHERE bus_number = %s AND status = 'Available' 
+                ORDER BY seat_number ASC FOR UPDATE
+            """, (bus_number,))
+            available_seats = [row['seat_number'] for row in cursor.fetchall()]
+            
+            # Allocate seats
+            allocated_seats = available_seats[:passenger_count]
+            standing_count = max(0, passenger_count - len(allocated_seats))
+            
+            if allocated_seats:
+                seat_str = ", ".join(map(str, allocated_seats))
+                if standing_count > 0:
+                    seat_str += f" (Plus {standing_count} Standing)"
+                    # Show warning when all seats are full and some must stand
+                    flash("All seats are occupied. Passenger will travel as Standing.", "warning")
+            else:
+                seat_str = "Standing"
+                flash("All seats are occupied. Passenger will travel as Standing.", "warning")
+
+            now_time = datetime.now().strftime('%H:%M:%S')
+
+            # Insert Ticket record (including assigned_seat, status, boarding_time)
             insert_ticket_query = """
-            INSERT INTO tickets (bus_number, source_stop, destination_stop, passenger_count, fare, ticket_date, ticket_time)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO tickets (bus_number, source_stop, destination_stop, passenger_count, fare, ticket_date, ticket_time, assigned_seat, ticket_status, boarding_time)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'Active', %s)
             """
             cursor.execute(insert_ticket_query, (
-                bus_number, source_stop, destination_stop, passenger_count, fare, ticket_date, ticket_time
+                bus_number, source_stop, destination_stop, passenger_count, fare, ticket_date, ticket_time, seat_str, now_time
             ))
             ticket_id = cursor.lastrowid
             
-            # Recalculate Occupancies:
-            # Current Occupancy = Current Occupancy + Passenger Count
-            new_occupancy = current_occupancy + passenger_count
+            # Update seat status table for allocated seats
+            for seat_num in allocated_seats:
+                cursor.execute("""
+                    UPDATE seat_status 
+                    SET status = 'Occupied', ticket_id = %s, boarding_stop = %s, destination_stop = %s
+                    WHERE bus_number = %s AND seat_number = %s
+                """, (ticket_id, source_stop, destination_stop, bus_number, seat_num))
             
-            # Seats Available = Seat Capacity - Current Occupancy (seated portion)
-            # Standing Occupancy = Current Occupancy - Seat Capacity (standing portion)
-            # Standing Available = Standing Capacity - Standing Occupancy
-            seats_available = max(0, seat_capacity - new_occupancy)
+            # Recalculate Occupancies:
+            new_occupancy = current_occupancy + passenger_count
+            seats_available = max(0, seat_capacity - (seat_capacity - len(available_seats) + len(allocated_seats)))
             standing_occupancy = max(0, new_occupancy - seat_capacity)
             standing_available = max(0, standing_capacity - standing_occupancy)
 
@@ -138,7 +179,6 @@ def generate_ticket():
                 new_occupancy, seats_available, standing_available, bus_number
             ))
             
-            # Commit transaction
             conn.commit()
             flash("Ticket generated successfully!", "success")
             
@@ -173,6 +213,7 @@ def occupancy_dashboard():
     cursor = None
     bus_status = None
     buses = []
+    seats = []
     recent_tickets = []
     
     try:
@@ -186,6 +227,42 @@ def occupancy_dashboard():
         # Fetch status for selected bus
         cursor.execute("SELECT * FROM occupancy WHERE bus_number = %s", (bus_number,))
         bus_status = cursor.fetchone()
+        
+        if bus_status:
+            seat_capacity = bus_status['seat_capacity']  # 60
+            standing_capacity = bus_status['standing_capacity']  # 20
+            current_occupancy = bus_status['current_occupancy']
+            total_capacity = seat_capacity + standing_capacity  # 80
+            
+            # Count currently occupied seats in seat_status
+            cursor.execute("SELECT COUNT(*) as count FROM seat_status WHERE bus_number = %s AND status = 'Occupied'", (bus_number,))
+            occupied_seats_count = cursor.fetchone()['count']
+            
+            # Calculate seated and standing counts
+            current_seated = occupied_seats_count
+            current_standing = max(0, current_occupancy - seat_capacity)
+            
+            bus_status['current_seated'] = current_seated
+            bus_status['current_standing'] = current_standing
+            bus_status['total_capacity'] = total_capacity
+            bus_status['available_standing'] = max(0, standing_capacity - current_standing)
+            bus_status['occupancy_percentage'] = round((current_occupancy / total_capacity) * 100, 1) if total_capacity > 0 else 0
+            
+            # Bus Status: Available / Nearly Full / Full
+            if current_occupancy >= total_capacity:
+                bus_status['status_label'] = 'Full'
+            elif current_occupancy >= (total_capacity * 0.8):
+                bus_status['status_label'] = 'Nearly Full'
+            else:
+                bus_status['status_label'] = 'Available'
+                
+            # Fetch physical seats for the live seat map (60 Seats total)
+            cursor.execute("""
+                SELECT seat_number, status FROM seat_status 
+                WHERE bus_number = %s 
+                ORDER BY seat_number ASC
+            """, (bus_number,))
+            seats = cursor.fetchall()
         
         # Fetch recent tickets for selected bus
         cursor.execute("""
@@ -204,6 +281,55 @@ def occupancy_dashboard():
     return render_template('occupancy_dashboard.html', 
                            buses=buses, 
                            bus=bus_status, 
+                           seats=seats,
                            selected_bus_number=bus_number,
                            tickets=recent_tickets)
+
+@tickets_bp.route('/conductor/occupancy/data')
+@login_required()
+def occupancy_data():
+    """
+    Returns JSON occupancy statistics and seat statuses for real-time dashboard updates.
+    """
+    bus_number = request.args.get('bus_number', 'NS-B01')
+    conn = None
+    cursor = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute("SELECT * FROM occupancy WHERE bus_number = %s", (bus_number,))
+        bus = cursor.fetchone()
+        if not bus:
+            return jsonify({"success": False, "error": "Bus not found"})
+            
+        cursor.execute("SELECT COUNT(*) as count FROM seat_status WHERE bus_number = %s AND status = 'Occupied'", (bus_number,))
+        occupied_seats = cursor.fetchone()['count']
+        
+        current_seated = occupied_seats
+        current_standing = max(0, bus['current_occupancy'] - bus['seat_capacity'])
+        total_capacity = bus['seat_capacity'] + bus['standing_capacity']
+        
+        cursor.execute("SELECT seat_number, status FROM seat_status WHERE bus_number = %s ORDER BY seat_number ASC", (bus_number,))
+        seats = cursor.fetchall()
+        
+        return jsonify({
+            "success": True,
+            "bus_number": bus['bus_number'],
+            "current_occupancy": bus['current_occupancy'],
+            "seat_capacity": bus['seat_capacity'],
+            "seats_available": bus['seats_available'],
+            "standing_capacity": bus['standing_capacity'],
+            "standing_available": bus['standing_available'],
+            "current_seated": current_seated,
+            "current_standing": current_standing,
+            "total_capacity": total_capacity,
+            "occupancy_percentage": round((bus['current_occupancy'] / total_capacity) * 100, 1) if total_capacity > 0 else 0,
+            "seats": seats
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
 

@@ -1,0 +1,218 @@
+<!-- templates/admin_ml_dashboard.html -->
+<!-- NextStop - ML Prediction Control Panel -->
+{% extends 'base.html' %}
+
+{% block title %}ML Predictions Control Panel - NextStop Transit{% endblock %}
+
+{% block content %}
+<div class="row g-4 animate-fade-in py-3">
+    <!-- Header Summary -->
+    <div class="col-12 d-flex flex-wrap align-items-center justify-content-between mb-2">
+        <div>
+            <h2 class="text-white font-weight-bold mb-1">Machine Learning Predictions Dashboard</h2>
+            <p class="text-secondary mb-0">Random Forest Regressor forecasting occupancy loads and bus overcrowding levels.</p>
+        </div>
+        
+        <form action="{{ url_for('ml.retrain_model') }}" method="POST">
+            <button type="submit" class="btn btn-primary-custom">
+                <i class="bi bi-cpu-fill me-1"></i> Retrain Machine Learning Model
+            </button>
+        </form>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="col-md-3">
+        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small d-block mb-1">Model Accuracy</span>
+                <h3 class="text-white font-weight-bold mb-0">{{ metrics.accuracy }}%</h3>
+                <span class="text-secondary small">R² coefficient metric</span>
+            </div>
+            <span class="fs-2 text-primary"><i class="bi bi-patch-check-fill"></i></span>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small d-block mb-1">Mean Absolute Error</span>
+                <h3 class="text-white font-weight-bold mb-0">{{ metrics.mae }}</h3>
+                <span class="text-secondary small">Average load deviance</span>
+            </div>
+            <span class="fs-2 text-warning"><i class="bi bi-calculator"></i></span>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small d-block mb-1">RMSE Score</span>
+                <h3 class="text-white font-weight-bold mb-0">{{ metrics.rmse }}</h3>
+                <span class="text-secondary small">Root mean squared error</span>
+            </div>
+            <span class="fs-2 text-info"><i class="bi bi-percent"></i></span>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
+            <div>
+                <span class="text-secondary small d-block mb-1">Crowd Level</span>
+                <h3 class="text-white font-weight-bold mb-0">{{ current_forecast.crowd_level }}</h3>
+                <span class="text-secondary small">For bus NS-B01</span>
+            </div>
+            <span class="badge {% if 'Low' in current_forecast.crowd_level %}bg-success{% elif 'Medium' in current_forecast.crowd_level %}bg-warning text-dark{% else %}bg-danger{% endif %} py-1.5 px-3">
+                {{ current_forecast.crowd_level }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Predictions Forecast card -->
+    <div class="col-lg-5">
+        <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between">
+            <div>
+                <h4 class="text-white mb-3">Live Forecast Feed (Next 15-30m)</h4>
+                
+                <div class="p-3 rounded bg-dark bg-opacity-50 border border-white border-opacity-5 mb-4 small">
+                    <div class="mb-3">
+                        <span class="text-secondary d-block">Expected Passenger Count</span>
+                        <strong class="text-white fs-4">{{ current_forecast.predicted_occupancy }} / 80</strong>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-secondary d-block">Forecasted Available Seats</span>
+                        <strong class="text-success fs-5">{{ current_forecast.predicted_available_seats }} / 60</strong>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-secondary d-block">Forecasted Standing Slots</span>
+                        <strong class="text-info fs-5">{{ current_forecast.predicted_standing_available }} / 20</strong>
+                    </div>
+                </div>
+
+                <div class="alert alert-secondary bg-dark bg-opacity-30 border-0 p-3 small text-secondary">
+                    <i class="bi bi-info-circle me-1"></i> Predictions adjust dynamically based on temporal trends, weather patterns, and local stop coordinates.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Area -->
+    <div class="col-lg-7">
+        <div class="glass-card p-4 h-100">
+            <h4 class="text-white mb-3">Forecast Occupancy vs Historical Log</h4>
+            <div style="height: 280px; position: relative;">
+                <canvas id="predictionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prediction History Logs -->
+    <div class="col-12 animate-fade-in delay-1">
+        <div class="glass-card p-4">
+            <h4 class="text-white mb-3"><i class="bi bi-journal-text text-primary me-2"></i>Prediction Log Registry</h4>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle border-0 mb-0">
+                    <thead>
+                        <tr class="text-secondary border-bottom border-white border-opacity-10">
+                            <th>Log ID</th>
+                            <th>Bus ID</th>
+                            <th>Forecast Timestamp</th>
+                            <th>Predicted Load</th>
+                            <th>Available Seats</th>
+                            <th>Available Standing</th>
+                            <th>Crowd Level</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-white">
+                        {% for h in history %}
+                        <tr class="border-bottom border-white border-opacity-5">
+                            <td class="font-weight-semibold">#{{ h.prediction_id }}</td>
+                            <td>{{ h.bus_number }}</td>
+                            <td class="small">{{ h.prediction_time }}</td>
+                            <td><strong class="text-gradient">{{ h.predicted_occupancy }} Passengers</strong></td>
+                            <td><span class="text-success">{{ h.predicted_available_seats }}</span></td>
+                            <td><span class="text-info">{{ h.predicted_standing_available }}</span></td>
+                            <td>
+                                <span class="badge {% if 'Low' in h.crowd_level %}bg-success{% elif 'Medium' in h.crowd_level %}bg-warning text-dark{% else %}bg-danger{% endif %} py-1 px-2">
+                                    {{ h.crowd_level }}
+                                </span>
+                            </td>
+                            <td>{{ h.model_accuracy }}%</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-secondary py-3">No prediction logs recorded yet. Run predictions by updates.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const ctx = document.getElementById('predictionChart').getContext('2d');
+    
+    // Sample datasets for historical comparison Chart
+    const labels = ['08:00 AM', '10:00 AM', '12:00 PM', '02:00 PM', '04:00 PM', '06:00 PM', '08:00 PM', '10:00 PM'];
+    const historicalData = [35, 48, 22, 18, 55, 68, 42, 12];
+    const predictedData = [38, 45, 25, 20, 52, 65, 45, 15];
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Historical Occupancy',
+                    data: historicalData,
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointStyle: 'circle',
+                    pointRadius: 4
+                },
+                {
+                    label: 'Predicted Occupancy (ML)',
+                    data: predictedData,
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointStyle: 'rectRot',
+                    pointRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: 'rgba(255, 255, 255, 0.7)' }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: 'rgba(255, 255, 255, 0.6)' }
+                },
+                y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: 'rgba(255, 255, 255, 0.6)' },
+                    min: 0,
+                    max: 80
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

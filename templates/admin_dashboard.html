@@ -18,51 +18,154 @@
         </div>
     </div>
 
-    <!-- Stats Cards Row -->
-    <div class="col-md-3">
-        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-secondary small d-block mb-1">Total Conductors</span>
-                <h3 class="text-white font-weight-bold mb-0">28</h3>
+    <!-- Stats Cards Row (11 Cards) -->
+    <div class="col-12">
+        <div class="row g-3">
+            <!-- 1. Total Conductors -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Total Conductors</span>
+                        <h3 class="text-white font-weight-bold mb-0">{{ stats.total_conductors }}</h3>
+                    </div>
+                    <div class="stat-icon bg-indigo-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-person-badge-fill text-primary"></i>
+                    </div>
+                </div>
             </div>
-            <div class="stat-icon bg-indigo-500 bg-opacity-10 p-3 rounded">
-                <i class="bi bi-people-fill text-primary"></i>
+            
+            <!-- 2. Total Admins -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Total Admins</span>
+                        <h3 class="text-white font-weight-bold mb-0">{{ stats.total_admins }}</h3>
+                    </div>
+                    <div class="stat-icon bg-violet-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-shield-lock-fill text-success"></i>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-secondary small d-block mb-1">Active Conductors</span>
-                <h3 class="text-white font-weight-bold mb-0">14</h3>
-            </div>
-            <div class="stat-icon bg-violet-500 bg-opacity-10 p-3 rounded">
-                <i class="bi bi-person-check-fill text-info"></i>
-            </div>
-        </div>
-    </div>
 
-    <div class="col-md-3">
-        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-secondary small d-block mb-1">Today's Tickets</span>
-                <h3 class="text-white font-weight-bold mb-0">156</h3>
+            <!-- 3. Registered Buses -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Registered Buses</span>
+                        <h3 class="text-white font-weight-bold mb-0">{{ stats.registered_buses }}</h3>
+                    </div>
+                    <div class="stat-icon bg-violet-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-bus-front-fill text-info"></i>
+                    </div>
+                </div>
             </div>
-            <div class="stat-icon bg-emerald-500 bg-opacity-10 p-3 rounded">
-                <i class="bi bi-ticket-perforated-fill text-success"></i>
-            </div>
-        </div>
-    </div>
 
-    <div class="col-md-3">
-        <div class="glass-card stat-card d-flex align-items-center justify-content-between">
-            <div>
-                <span class="text-secondary small d-block mb-1">Current Occupancy</span>
-                <h3 class="text-white font-weight-bold mb-0">45 / 60</h3>
+            <!-- 4. Active Buses -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Active Buses</span>
+                        <h3 class="text-white font-weight-bold mb-0">{{ stats.active_buses }}</h3>
+                    </div>
+                    <div class="stat-icon bg-emerald-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-play-circle-fill text-success"></i>
+                    </div>
+                </div>
             </div>
-            <div class="stat-icon bg-rose-500 bg-opacity-10 p-3 rounded">
-                <i class="bi bi-bus-front-fill text-warning"></i>
+
+            <!-- 5. Current Occupancy -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Current Occupancy</span>
+                        <h3 class="text-gradient font-weight-bold mb-0">{{ stats.current_occupancy }} / {{ stats.total_capacity }}</h3>
+                    </div>
+                    <div class="stat-icon bg-rose-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-people-fill text-danger"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Available Seats -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Available Seats</span>
+                        <h3 class="text-success font-weight-bold mb-0">{{ stats.seats_available }}</h3>
+                    </div>
+                    <div class="stat-icon bg-emerald-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-circle-check-fill text-success"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Standing Capacity -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Standing Capacity</span>
+                        <h3 class="text-info font-weight-bold mb-0">{{ stats.standing_capacity }}</h3>
+                    </div>
+                    <div class="stat-icon bg-rose-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-person-fill text-info"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. Today's Tickets -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Today's Tickets</span>
+                        <h3 class="text-white font-weight-bold mb-0">{{ stats.todays_tickets }}</h3>
+                    </div>
+                    <div class="stat-icon bg-rose-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-ticket-perforated-fill text-warning"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. ML Model Status -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">ML Model Status</span>
+                        <h3 class="text-white font-weight-bold mb-0">
+                            <span class="badge {% if stats.ml_model_status == 'Online' %}bg-success{% else %}bg-danger{% endif %} px-2.5 py-1">
+                                {{ stats.ml_model_status }}
+                            </span>
+                        </h3>
+                    </div>
+                    <div class="stat-icon bg-indigo-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-cpu-fill text-primary"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 10. Model Accuracy -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Model Accuracy</span>
+                        <h3 class="text-gradient font-weight-bold mb-0">{{ stats.model_accuracy }}</h3>
+                    </div>
+                    <div class="stat-icon bg-violet-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-percent text-success"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 11. Last Prediction Time -->
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <div class="glass-card stat-card d-flex align-items-center justify-content-between p-3.5">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Last Prediction Time</span>
+                        <span class="text-white font-weight-semibold d-block mt-1" style="font-size: 0.85rem;">{{ stats.last_prediction_time }}</span>
+                    </div>
+                    <div class="stat-icon bg-emerald-500 bg-opacity-10 p-2.5 rounded">
+                        <i class="bi bi-clock-history text-info"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -134,17 +237,27 @@
 
             <div class="d-flex flex-column gap-2">
                 <a href="{{ url_for('admin_conductors') }}" class="btn btn-primary-custom w-100">
-                    <i class="bi bi-people me-1"></i> Manage Conductors
+                    <i class="bi bi-people me-1"></i> Manage Users
                 </a>
-                <a href="{{ url_for('admin_reports') }}" class="btn btn-secondary-custom w-100">
-                    <i class="bi bi-graph-up me-1"></i> Reports
+                <a href="{{ url_for('gps_tracking') }}" class="btn btn-secondary-custom w-100">
+                    <i class="bi bi-geo-alt me-1"></i> View GPS Tracking
                 </a>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger w-100">
+                <a href="{{ url_for('trip_history') }}" class="btn btn-secondary-custom w-100">
+                    <i class="bi bi-receipt me-1"></i> View Passenger History
+                </a>
+                <a href="{{ url_for('tickets.occupancy_dashboard') }}" class="btn btn-secondary-custom w-100">
+                    <i class="bi bi-speedometer2 me-1"></i> View Occupancy Report
+                </a>
+                <form action="{{ url_for('ml.retrain_model') }}" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn btn-secondary-custom w-100">
+                        <i class="bi bi-cpu me-1"></i> Retrain ML Model
+                    </button>
+                </form>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger w-100 mt-2">
                     <i class="bi bi-box-arrow-right me-1"></i> Logout
                 </a>
             </div>
         </div>
     </div>
-</div>
 </div>
 {% endblock %}

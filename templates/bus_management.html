@@ -1,0 +1,73 @@
+<!-- templates/bus_management.html -->
+<!-- NextStop - Manage Buses Admin View -->
+{% extends 'base.html' %}
+
+{% block title %}Manage Buses - NextStop Admin{% endblock %}
+
+{% block content %}
+<div class="row g-4 animate-fade-in py-3">
+    <div class="col-12 d-flex flex-wrap align-items-center justify-content-between">
+        <div>
+            <h2 class="text-white font-weight-bold mb-1">Bus Management</h2>
+            <p class="text-secondary mb-0">View and manage transit vehicles across all routes.</p>
+        </div>
+        <a href="{{ url_for('admin_add_bus') }}" class="btn btn-primary-custom my-2 my-md-0">
+            <i class="bi bi-bus-front me-1"></i> Register New Bus
+        </a>
+    </div>
+
+    <div class="col-12">
+        <div class="glass-card p-4">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle border-0 mb-0">
+                    <thead>
+                        <tr class="text-secondary border-bottom border-white border-opacity-10">
+                            <th>Bus ID</th>
+                            <th>Bus Number</th>
+                            <th>Route</th>
+                            <th>Type</th>
+                            <th>Capacities</th>
+                            <th>Live Occupancy</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-white">
+                        {% for b in buses %}
+                        <tr class="border-bottom border-white border-opacity-5">
+                            <td class="font-weight-semibold">#{{ b.bus_id }}</td>
+                            <td><strong class="text-primary">{{ b.bus_number }}</strong></td>
+                            <td>{{ b.route_name }}</td>
+                            <td class="text-secondary small">{{ b.bus_type }}</td>
+                            <td>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 mb-1 d-block" style="width: fit-content;">Seat: {{ b.seat_capacity }}</span>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 d-block" style="width: fit-content;">Stand: {{ b.standing_capacity }}</span>
+                            </td>
+                            <td>
+                                {% set total_cap = b.seat_capacity + b.standing_capacity %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="{% if b.current_occupancy >= total_cap %}text-danger{% elif b.current_occupancy >= total_cap * 0.8 %}text-warning{% else %}text-success{% endif %} font-weight-bold">
+                                        {{ b.current_occupancy }}
+                                    </span>
+                                    <span class="text-secondary small">/ {{ total_cap }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if b.status == 'active' %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-secondary py-4">No registered buses found in database.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

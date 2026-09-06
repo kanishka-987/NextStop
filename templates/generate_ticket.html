@@ -40,19 +40,23 @@
                         </div>
                         <div class="col-6">
                             <span class="text-secondary small d-block">Source Stop</span>
-                            <span class="text-white font-weight-semibold">{{ generated_ticket.source_stop }}</span>
+                            <span class="text-white font-weight-semibold">{{ generated_ticket.source_stop|alias }}</span>
                         </div>
                         <div class="col-6">
                             <span class="text-secondary small d-block">Destination Stop</span>
-                            <span class="text-white font-weight-semibold">{{ generated_ticket.destination_stop }}</span>
+                            <span class="text-white font-weight-semibold">{{ generated_ticket.destination_stop|alias }}</span>
                         </div>
                         <div class="col-6">
                             <span class="text-secondary small d-block">Fare Amount</span>
-                            <span class="text-white font-weight-semibold">${{ generated_ticket.fare }}</span>
+                            <span class="text-white font-weight-semibold">₹{{ generated_ticket.fare }}</span>
                         </div>
                         <div class="col-6">
                             <span class="text-secondary small d-block">Issued On</span>
                             <span class="text-white font-weight-semibold" style="font-size: 0.85rem;">{{ generated_ticket.ticket_date }} {{ generated_ticket.ticket_time }}</span>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-secondary small d-block">Assigned Seat Numbers</span>
+                            <span class="text-warning font-weight-semibold" style="font-size: 0.95rem;">{{ generated_ticket.assigned_seat }}</span>
                         </div>
                     </div>
                 </div>
@@ -96,13 +100,33 @@
                     <!-- Source Stop -->
                     <div class="col-6 mb-3">
                         <label for="source_stop" class="form-label text-secondary small">Source Stop</label>
-                        <input type="text" class="form-control form-control-custom" id="source_stop" name="source_stop" value="{{ source_stop if source_stop else '' }}" placeholder="Central Station" required>
+                        <select class="form-select form-select-custom" id="source_stop" name="source_stop" required>
+                            <option value="">Select Source ▼</option>
+                            <option value="Central Station" {% if source_stop == 'Central Station' %}selected{% endif %}>Chennai Central</option>
+                            <option value="Oak Avenue" {% if source_stop == 'Oak Avenue' %}selected{% endif %}>Guindy</option>
+                            <option value="Maple Road" {% if source_stop == 'Maple Road' %}selected{% endif %}>Tambaram</option>
+                            <option value="Aisle Street" {% if source_stop == 'Aisle Street' %}selected{% endif %}>Chengalpattu</option>
+                            <option value="City Center" {% if source_stop == 'City Center' %}selected{% endif %}>Mahabalipuram</option>
+                            <option value="Tech Park" {% if source_stop == 'Tech Park' %}selected{% endif %}>Kovalam</option>
+                            <option value="South Gate" {% if source_stop == 'South Gate' %}selected{% endif %}>Sholinganallur</option>
+                            <option value="East Airport" {% if source_stop == 'East Airport' %}selected{% endif %}>Chennai Airport</option>
+                        </select>
                     </div>
                     
                     <!-- Destination Stop -->
                     <div class="col-6 mb-3">
                         <label for="destination_stop" class="form-label text-secondary small">Destination Stop</label>
-                        <input type="text" class="form-control form-control-custom" id="destination_stop" name="destination_stop" value="{{ destination_stop if destination_stop else '' }}" placeholder="Tech Park" required>
+                        <select class="form-select form-select-custom" id="destination_stop" name="destination_stop" required>
+                            <option value="">Select Destination ▼</option>
+                            <option value="Central Station" {% if destination_stop == 'Central Station' %}selected{% endif %}>Chennai Central</option>
+                            <option value="Oak Avenue" {% if destination_stop == 'Oak Avenue' %}selected{% endif %}>Guindy</option>
+                            <option value="Maple Road" {% if destination_stop == 'Maple Road' %}selected{% endif %}>Tambaram</option>
+                            <option value="Aisle Street" {% if destination_stop == 'Aisle Street' %}selected{% endif %}>Chengalpattu</option>
+                            <option value="City Center" {% if destination_stop == 'City Center' %}selected{% endif %}>Mahabalipuram</option>
+                            <option value="Tech Park" {% if destination_stop == 'Tech Park' %}selected{% endif %}>Kovalam</option>
+                            <option value="South Gate" {% if destination_stop == 'South Gate' %}selected{% endif %}>Sholinganallur</option>
+                            <option value="East Airport" {% if destination_stop == 'East Airport' %}selected{% endif %}>Chennai Airport</option>
+                        </select>
                     </div>
                 </div>
 
@@ -115,8 +139,9 @@
                     
                     <!-- Fare -->
                     <div class="col-6 mb-3">
-                        <label for="fare" class="form-label text-secondary small">Ticket Fare ($)</label>
-                        <input type="number" step="0.01" class="form-control form-control-custom" id="fare" name="fare" min="0" value="{{ fare if fare else '5.00' }}" required>
+                        <label for="fare" class="form-label text-secondary small">Ticket Fare (₹)</label>
+                        <input type="text" class="form-control form-control-custom" id="fare" name="fare" value="{% if fare %}₹ {{ fare }}{% endif %}" readonly style="background-color: rgba(255, 255, 255, 0.05); color: #fff; cursor: not-allowed; border: 1px solid var(--border-color);">
+                        <small class="text-secondary mt-1 d-block">Approximate demo fare</small>
                     </div>
                 </div>
 
@@ -151,19 +176,78 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    // Basic automatic dynamic fare estimation script (enhances UX)
     const passengerCount = document.getElementById("passenger_count");
     const fare = document.getElementById("fare");
-    const baseFarePerPassenger = 5.00;
+    const sourceStop = document.getElementById("source_stop");
+    const destinationStop = document.getElementById("destination_stop");
     
-    if (passengerCount && fare) {
-        passengerCount.addEventListener("input", () => {
+    const stopsArray = [
+        "Central Station",
+        "Oak Avenue",
+        "Maple Road",
+        "Aisle Street",
+        "City Center",
+        "Tech Park",
+        "South Gate",
+        "East Airport"
+    ];
+
+    function calculateFare() {
+        if (!sourceStop.value || !destinationStop.value || !passengerCount.value) {
+            fare.value = "";
+            return;
+        }
+        const sourceIndex = stopsArray.indexOf(sourceStop.value);
+        const destIndex = stopsArray.indexOf(destinationStop.value);
+        const segments = destIndex - sourceIndex;
+        
+        if (segments > 0) {
             const count = parseInt(passengerCount.value) || 0;
+            const baseFare = 15 + (segments - 1) * 5;
+            const totalFare = baseFare * count;
             if (count > 0) {
-                fare.value = (count * baseFarePerPassenger).toFixed(2);
+                fare.value = `₹ ${totalFare.toFixed(2)}`;
+            } else {
+                fare.value = "";
+            }
+        } else {
+            fare.value = "";
+        }
+    }
+
+    function validateStops() {
+        if (!sourceStop.value) return;
+        const sourceIndex = stopsArray.indexOf(sourceStop.value);
+        
+        // Iterate over destination options
+        Array.from(destinationStop.options).forEach(opt => {
+            if (!opt.value) return; // skip default placeholder
+            const destIndex = stopsArray.indexOf(opt.value);
+            // Disable if destination is before or equal to source
+            if (destIndex <= sourceIndex) {
+                opt.disabled = true;
+                opt.style.color = "#6c757d"; // visually muted
+            } else {
+                opt.disabled = false;
+                opt.style.color = "";
             }
         });
+
+        // Reset destination if currently selected is now invalid
+        if (destinationStop.value && stopsArray.indexOf(destinationStop.value) <= sourceIndex) {
+            destinationStop.value = "";
+        }
+        
+        calculateFare();
     }
+
+    sourceStop.addEventListener("change", validateStops);
+    destinationStop.addEventListener("change", calculateFare);
+    passengerCount.addEventListener("input", calculateFare);
+    
+    // Initial validation in case of pre-filled values
+    validateStops();
+    calculateFare();
 });
 </script>
 {% endblock %}

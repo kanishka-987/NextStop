@@ -1,52 +1,45 @@
 <!-- templates/contact.html -->
-<!-- NextStop - Contact & Support Page -->
+<!-- NextStop - Contact & Project Page -->
 {% extends 'base.html' %}
 
-{% block title %}Contact - NextStop Transit System{% endblock %}
+{% block title %}About & Contact - NextStop Transit System{% endblock %}
 
 {% block content %}
 <div class="row g-4 animate-fade-in py-3">
     <div class="col-12 text-center mb-3">
         <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill mb-3 font-weight-semibold">
-            <i class="bi bi-envelope-fill me-1"></i> Get In Touch
+            <i class="bi bi-info-circle-fill me-1"></i> System Info
         </span>
-        <h1 class="text-white font-weight-bold">Contact & Support</h1>
-        <p class="text-secondary max-w-2xl mx-auto">Reach out to the project team or submit feedback regarding NextStop platform operations.</p>
+        <h1 class="text-white font-weight-bold">About NextStop Transit</h1>
+        <p class="text-secondary max-w-2xl mx-auto">AI-Powered Smart Public Transport Management System</p>
     </div>
 
-    <!-- Contact Info Cards -->
-    <div class="col-lg-5">
-        <div class="d-flex flex-column gap-4 h-100">
-            <!-- Developer Details -->
-            <div class="glass-card p-4">
-                <h4 class="text-white mb-3"><i class="bi bi-person-badge-fill text-primary me-2"></i>Developer Details</h4>
-                <div class="p-3 rounded bg-dark bg-opacity-40 border border-white border-opacity-5">
-                    <strong class="text-white d-block fs-5">Kanishka V</strong>
-                    <span class="text-secondary small d-block mb-2">Student Developer</span>
-                    <div class="text-secondary small">
-                        <div><i class="bi bi-building me-2"></i>Department of Computer Science & Engineering</div>
-                        <div><i class="bi bi-envelope me-2"></i>kanishka@nextstop.com</div>
-                    </div>
-                </div>
+    <!-- Project Description -->
+    <div class="col-lg-6">
+        <div class="glass-card p-4 p-md-5 h-100 d-flex flex-column justify-content-between">
+            <div>
+                <h3 class="text-white font-weight-bold mb-3"><i class="bi bi-bus-front-fill text-primary me-2"></i>NextStop Transit</h3>
+                <p class="text-secondary" style="font-size: 1.05rem; line-height: 1.6;">
+                    NextStop Transit is an AI-powered Smart Public Transport Management System designed to predict bus occupancy, improve passenger convenience, optimize public transportation, and support intelligent ticket generation using real-time occupancy data and machine learning.
+                </p>
+                
+                <h5 class="text-white mt-4 mb-2"><i class="bi bi-gear-fill text-secondary me-2"></i>Core Operations</h5>
+                <ul class="text-secondary ps-3 small d-flex flex-column gap-2">
+                    <li>Real-time bus tracking and nearest stop distance calculations.</li>
+                    <li>Automated passenger exit detection and seat release.</li>
+                    <li>Machine learning occupancy forecasts using Random Forest regression models.</li>
+                    <li>Automatic seat and standing capacity distribution checks.</li>
+                </ul>
             </div>
-
-            <!-- Guide Details -->
-            <div class="glass-card p-4">
-                <h4 class="text-white mb-3"><i class="bi bi-mortarboard-fill text-secondary me-2"></i>Project Guide Details</h4>
-                <div class="p-3 rounded bg-dark bg-opacity-40 border border-white border-opacity-5">
-                    <strong class="text-white d-block fs-5">Faculty Project Advisor</strong>
-                    <span class="text-secondary small d-block mb-2">Department of Computer Science</span>
-                    <div class="text-secondary small">
-                        <div><i class="bi bi-building me-2"></i>Engineering Institute</div>
-                        <div><i class="bi bi-envelope me-2"></i>guide@nextstop.com</div>
-                    </div>
-                </div>
+            
+            <div class="p-3 rounded bg-dark bg-opacity-45 border border-white border-opacity-5 mt-4 text-secondary small">
+                <i class="bi bi-shield-check text-success me-1"></i> Under public review and central transport authority monitoring.
             </div>
         </div>
     </div>
 
     <!-- Feedback Form -->
-    <div class="col-lg-7">
+    <div class="col-lg-6">
         <div class="glass-card p-4 p-md-5 h-100">
             <h3 class="text-white font-weight-bold mb-2">Feedback & Inquiries</h3>
             <p class="text-secondary small mb-4">Send us your thoughts, bug reports, or feature recommendations.</p>
@@ -54,18 +47,18 @@
             <form action="{{ url_for('contact') }}" method="POST">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="name" class="form-label text-secondary small">Your Name</label>
+                        <label for="name" class="form-label text-secondary small">Name</label>
                         <input type="text" class="form-control form-control-custom" id="name" name="name" placeholder="John Doe" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="email" class="form-label text-secondary small">Your Email</label>
+                        <label for="email" class="form-label text-secondary small">Email</label>
                         <input type="email" class="form-control form-control-custom" id="email" name="email" placeholder="john@example.com" required>
                     </div>
                 </div>
                 
                 <div class="mb-3">
                     <label for="subject" class="form-label text-secondary small">Subject</label>
-                    <input type="text" class="form-control form-control-custom" id="subject" name="subject" placeholder="Feedback on Module 2" required>
+                    <input type="text" class="form-control form-control-custom" id="subject" name="subject" placeholder="Feedback on ML Dashboard" required>
                 </div>
                 
                 <div class="mb-4">

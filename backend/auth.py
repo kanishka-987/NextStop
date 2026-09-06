@@ -196,3 +196,75 @@ def register():
 
     return render_template('register.html')
 
+@auth_bp.route('/admin/register', methods=['GET', 'POST'])
+def admin_register():
+    if 'user_id' in session:
+        if session.get('role') == 'admin':
+            return redirect(url_for('admin_dashboard'))
+        elif session.get('role') == 'conductor':
+            return redirect(url_for('conductor_dashboard'))
+
+    if request.method == 'POST':
+        full_name = request.form.get('full_name', '').strip()
+        employee_id = request.form.get('employee_id', '').strip()
+        email = request.form.get('email', '').strip()
+        phone_number = request.form.get('phone_number', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        # 1. Validation: All fields are mandatory
+        if not (full_name and employee_id and email and phone_number and password and confirm_password):
+            flash("All fields are mandatory. Please fill in the registration form completely.", "warning")
+            return render_template('admin_register.html', full_name=full_name, employee_id=employee_id, email=email, phone_number=phone_number)
+
+        # 2. Validation: Confirm password match
+        if password != confirm_password:
+            flash("Passwords do not match. Please verify your password.", "warning")
+            return render_template('admin_register.html', full_name=full_name, employee_id=employee_id, email=email, phone_number=phone_number)
+
+        # 3. Database uniqueness checks (Email, Employee ID, Phone Number)
+        conn = None
+        cursor = None
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+            
+            # Check unique email
+            cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
+            if cursor.fetchone():
+                flash("Email already registered. Please choose another email.", "danger")
+                return render_template('admin_register.html', full_name=full_name, employee_id=employee_id, email=email, phone_number=phone_number)
+
+            # Check unique employee_id
+            cursor.execute("SELECT user_id FROM users WHERE employee_id = %s", (employee_id,))
+            if cursor.fetchone():
+                flash("Employee ID already registered. Please verify your Employee ID.", "danger")
+                return render_template('admin_register.html', full_name=full_name, employee_id=employee_id, email=email, phone_number=phone_number)
+
+            # Check unique phone_number
+            cursor.execute("SELECT user_id FROM users WHERE phone_number = %s", (phone_number,))
+            if cursor.fetchone():
+                flash("Phone Number already registered. Please choose another phone number.", "danger")
+                return render_template('admin_register.html', full_name=full_name, employee_id=employee_id, email=email, phone_number=phone_number)
+
+            # Save Admin to DB
+            hashed_pw = generate_password_hash(password)
+            cursor.execute("""
+                INSERT INTO users (full_name, email, password, role, employee_id, phone_number)
+                VALUES (%s, %s, %s, 'admin', %s, %s)
+            """, (full_name, email, hashed_pw, employee_id, phone_number))
+            conn.commit()
+
+            flash("Admin account created successfully.", "success")
+            return redirect(url_for('auth.login'))
+
+        except mysql.connector.Error as err:
+            flash(f"Database error during registration: {err}", "danger")
+            return render_template('admin_register.html', full_name=full_name, employee_id=employee_id, email=email, phone_number=phone_number)
+        finally:
+            if cursor: cursor.close()
+            if conn: conn.close()
+
+    return render_template('admin_register.html')
+
+

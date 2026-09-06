@@ -1,0 +1,106 @@
+<!-- templates/admin_register.html -->
+<!-- NextStop - Admin Registration Page -->
+{% extends 'base.html' %}
+
+{% block title %}Register Admin - NextStop Transit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center py-4 animate-fade-in">
+    <div class="col-12 login-container">
+        <div class="glass-card p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle mb-3" style="width: 60px; height: 60px;">
+                    <i class="bi bi-shield-lock-fill fs-3"></i>
+                </div>
+                <h3 class="text-white font-weight-bold mb-1">Create Admin Account</h3>
+                <p class="text-secondary small">Register to monitor GPS, forecast occupancy and retrain models</p>
+                <div class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 mt-1 px-3 py-1">
+                    Role: System Admin
+                </div>
+            </div>
+
+            <!-- Registration Form -->
+            <form action="{{ url_for('auth.admin_register') }}" method="POST" id="adminRegisterForm">
+                
+                <!-- Full Name -->
+                <div class="mb-3">
+                    <label for="full_name" class="form-label text-secondary small">Full Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-person"></i>
+                        </span>
+                        <input type="text" class="form-control form-control-custom border-start-0" id="full_name" name="full_name" value="{{ full_name if full_name else '' }}" placeholder="Amit Sharma" required>
+                    </div>
+                </div>
+
+                <!-- Employee ID -->
+                <div class="mb-3">
+                    <label for="employee_id" class="form-label text-secondary small">Employee ID (Unique)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-card-text"></i>
+                        </span>
+                        <input type="text" class="form-control form-control-custom border-start-0" id="employee_id" name="employee_id" value="{{ employee_id if employee_id else '' }}" placeholder="EMP102" required>
+                    </div>
+                </div>
+
+                <!-- Email Address -->
+                <div class="mb-3">
+                    <label for="email" class="form-label text-secondary small">Email Address (Unique)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                        <input type="email" class="form-control form-control-custom border-start-0" id="email" name="email" value="{{ email if email else '' }}" placeholder="amit@nextstop.com" required>
+                    </div>
+                </div>
+
+                <!-- Phone Number -->
+                <div class="mb-3">
+                    <label for="phone_number" class="form-label text-secondary small">Phone Number (Unique)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-telephone"></i>
+                        </span>
+                        <input type="tel" class="form-control form-control-custom border-start-0" id="phone_number" name="phone_number" value="{{ phone_number if phone_number else '' }}" placeholder="9876543210" required>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label for="password" class="form-label text-secondary small">Password (Min 6 chars)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-key"></i>
+                        </span>
+                        <input type="password" class="form-control form-control-custom border-start-0" id="password" name="password" placeholder="••••••••" required minlength="6">
+                    </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label text-secondary small">Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-secondary" style="border-color: var(--border-color);">
+                            <i class="bi bi-check2-square"></i>
+                        </span>
+                        <input type="password" class="form-control form-control-custom border-start-0" id="confirm_password" name="confirm_password" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button type="submit" class="btn btn-primary-custom w-100 py-2.5 mb-3">
+                    <i class="bi bi-person-check me-2"></i> Register Account
+                </button>
+
+                <div class="text-center mt-3">
+                    <span class="text-secondary small">Already registered?</span>
+                    <a href="{{ url_for('auth.login') }}" class="text-decoration-none text-primary ms-1 small">
+                        Log In here
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

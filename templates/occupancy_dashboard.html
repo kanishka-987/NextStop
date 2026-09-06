@@ -13,7 +13,6 @@
             <p class="text-secondary mb-0">Real-time seating capacities and passenger load distribution monitoring.</p>
         </div>
         <div class="d-flex align-items-center gap-2 my-2 my-md-0">
-            <!-- Refresh Button -->
             <button class="btn btn-secondary-custom" onclick="window.location.reload();">
                 <i class="bi bi-arrow-clockwise me-1"></i> Refresh Data
             </button>
@@ -46,58 +45,78 @@
 
     <!-- Stats Cards Row -->
     {% if bus %}
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="glass-card p-4">
-                <span class="text-secondary small d-block mb-1">Bus Identifier</span>
-                <h3 class="text-white font-weight-bold mb-0">{{ bus.bus_number }}</h3>
-                <span class="text-secondary small">Total Cap: {{ bus.seat_capacity + bus.standing_capacity }}</span>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="text-secondary small d-block mb-1">Bus Identifier & Status</span>
+                        <h3 class="text-white font-weight-bold mb-0" id="busNumberHeader">{{ bus.bus_number }}</h3>
+                        <span class="text-secondary small">Total Capacity: <span id="totalCapacityText">{{ bus.total_capacity }}</span></span>
+                    </div>
+                    <span id="statusLabelBadge" class="badge {% if bus.status_label == 'Full' %}bg-danger{% elif bus.status_label == 'Nearly Full' %}bg-warning text-dark{% else %}bg-success{% endif %} fs-6 px-3 py-1.5">
+                        {{ bus.status_label }}
+                    </span>
+                </div>
             </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="glass-card p-4">
-                <span class="text-secondary small d-block mb-1">Current Occupancy</span>
-                <h3 class="text-gradient font-weight-bold mb-0">{{ bus.current_occupancy }} Passengers</h3>
-                <span class="text-secondary small">Seated + Standing</span>
+                <span class="text-secondary small d-block mb-1">Total Occupancy</span>
+                <h3 class="text-gradient font-weight-bold mb-0" id="totalOccupancyHeader">{{ bus.current_occupancy }} / {{ bus.total_capacity }}</h3>
+                <span class="text-secondary small">Total capacity utilized</span>
             </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="glass-card p-4">
-                <span class="text-secondary small d-block mb-1">Seats Available</span>
-                <h3 class="text-success font-weight-bold mb-0">{{ bus.seats_available }} / {{ bus.seat_capacity }}</h3>
-                <span class="text-secondary small">Seated Capacity</span>
+                <span class="text-secondary small d-block mb-1">Seated Passengers</span>
+                <h3 class="text-success font-weight-bold mb-0" id="seatedHeader">{{ bus.current_seated }} / {{ bus.seat_capacity }}</h3>
+                <span class="text-secondary small">Occupied seats</span>
             </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="glass-card p-4">
-                <span class="text-secondary small d-block mb-1">Standing Available</span>
-                <h3 class="text-info font-weight-bold mb-0">{{ bus.standing_available }} / {{ bus.standing_capacity }}</h3>
-                <span class="text-secondary small">Aisle Room Capacity</span>
+                <span class="text-secondary small d-block mb-1">Standing Passengers</span>
+                <h3 class="text-info font-weight-bold mb-0" id="standingHeader">{{ bus.current_standing }} / {{ bus.standing_capacity }}</h3>
+                <span class="text-secondary small">Standing room utilized</span>
             </div>
         </div>
 
-        <!-- Occupancy Progress Bar Section -->
+        <div class="col-md-4">
+            <div class="glass-card p-4">
+                <span class="text-secondary small d-block mb-1">Available Seats</span>
+                <h3 class="text-success font-weight-bold mb-0" id="availableSeatsHeader">{{ bus.seats_available }}</h3>
+                <span class="text-secondary small">Unoccupied physical seats</span>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="glass-card p-4">
+                <span class="text-secondary small d-block mb-1">Available Standing Space</span>
+                <h3 class="text-info font-weight-bold mb-0" id="availableStandingHeader">{{ bus.available_standing }}</h3>
+                <span class="text-secondary small">Remaining standing room</span>
+            </div>
+        </div>
+
+        <!-- Occupancy Progress Gauge -->
         <div class="col-12">
             <div class="glass-card p-4">
                 <h4 class="text-white mb-3"><i class="bi bi-speedometer text-primary me-2"></i>Passenger Capacity Gauge</h4>
-                {% set total_cap = bus.seat_capacity + bus.standing_capacity %}
-                {% set occupancy_pct = ((bus.current_occupancy / total_cap) * 100) | int %}
-                
                 <div class="d-flex justify-content-between text-secondary mb-2 font-weight-semibold">
-                    <span>Occupancy Rate: {{ occupancy_pct }}%</span>
-                    <span>{{ bus.current_occupancy }} of {{ total_cap }} Total Slots</span>
+                    <span id="rateLabelText">Occupancy Rate: {{ bus.occupancy_percentage }}%</span>
+                    <span id="gaugeSlotsText">{{ bus.current_occupancy }} of {{ bus.total_capacity }} Total Slots</span>
                 </div>
                 
                 <div class="progress mb-3" style="height: 18px; border-radius: 9px; background: rgba(255,255,255,0.05);">
-                    <div class="progress-bar {% if occupancy_pct >= 90 %}bg-danger{% elif occupancy_pct >= 65 %}bg-warning{% else %}bg-success{% endif %} progress-bar-striped progress-bar-animated" 
+                    <div id="occupancyProgressBar" class="progress-bar {% if bus.occupancy_percentage >= 90 %}bg-danger{% elif bus.occupancy_percentage >= 70 %}bg-warning{% else %}bg-success{% endif %} progress-bar-striped progress-bar-animated" 
                          role="progressbar" 
-                         style="width: {{ occupancy_pct }}%;" 
-                         aria-valuenow="{{ occupancy_pct }}" 
+                         style="width: {{ bus.occupancy_percentage }}%;" 
+                         aria-valuenow="{{ bus.occupancy_percentage }}" 
                          aria-valuemin="0" 
                          aria-valuemax="100">
-                         {{ occupancy_pct }}%
+                         {{ bus.occupancy_percentage }}%
                     </div>
                 </div>
                 
@@ -105,6 +124,58 @@
                     <span><i class="bi bi-info-circle me-1"></i> Green: Low Occupancy</span>
                     <span>Yellow: Moderate Load</span>
                     <span>Red: Near / Full Capacity</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Seat Map Section -->
+        <div class="col-12 animate-fade-in delay-1">
+            <div class="glass-card p-4 text-center">
+                <h4 class="text-white mb-2 text-start"><i class="bi bi-bus-front-fill text-primary me-2"></i>Live Seat Occupancy Map</h4>
+                <p class="text-secondary small text-start mb-4">Real-time seating map loaded from MySQL database.</p>
+
+                <div class="bus-layout mb-4" style="max-width: 420px; margin: 0 auto; background: rgba(0,0,0,0.25); padding: 20px; border-radius: 15px; border: 1px solid var(--border-color);">
+                    <div class="driver-cabin d-flex justify-content-between align-items-center mb-4">
+                        <span class="text-secondary"><i class="bi bi-life-preserver me-1"></i> Driver Console</span>
+                        <span class="text-secondary">Entrance <i class="bi bi-arrow-right-short"></i></span>
+                    </div>
+                    
+                    <div id="seatMapContainer" class="d-flex flex-column gap-3" style="max-height: 480px; overflow-y: auto; padding-right: 5px;">
+                        {% set rows = (bus.seat_capacity + 3) // 4 %}
+                        {% for row_idx in range(rows) %}
+                            {% set start_idx = row_idx * 4 %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <!-- Left 2 seats -->
+                                <div class="d-flex gap-2">
+                                    {% for seat in seats[start_idx : start_idx + 2] %}
+                                        <div class="bus-seat {% if seat.status == 'Available' %}available{% elif seat.status == 'Occupied' %}occupied{% else %}reserved{% endif %}" 
+                                             data-seat="{{ seat.seat_number }}">
+                                            {{ seat.seat_number }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <!-- Aisle Gap Spacer -->
+                                <div class="aisle-spacer text-secondary text-uppercase small" style="width: 50px; font-size: 0.7rem; letter-spacing: 1px;">Aisle</div>
+                                
+                                <!-- Right 2 seats -->
+                                <div class="d-flex gap-2">
+                                    {% for seat in seats[start_idx + 2 : start_idx + 4] %}
+                                        <div class="bus-seat {% if seat.status == 'Available' %}available{% elif seat.status == 'Occupied' %}occupied{% else %}reserved{% endif %}" 
+                                             data-seat="{{ seat.seat_number }}">
+                                            {{ seat.seat_number }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-center gap-4 text-secondary small">
+                    <div><span class="d-inline-block bg-success rounded-circle me-1" style="width:12px; height:12px;"></span> Available</div>
+                    <div><span class="d-inline-block bg-danger rounded-circle me-1" style="width:12px; height:12px;"></span> Occupied</div>
+                    <div><span class="d-inline-block bg-secondary rounded-circle me-1" style="width:12px; height:12px;"></span> Reserved</div>
                 </div>
             </div>
         </div>
@@ -139,10 +210,10 @@
                         <tr class="border-bottom border-white border-opacity-5">
                             <td class="font-weight-semibold">#{{ ticket.ticket_id }}</td>
                             <td>{{ ticket.bus_number }}</td>
-                            <td>{{ ticket.source_stop }}</td>
-                            <td>{{ ticket.destination_stop }}</td>
+                            <td>{{ ticket.source_stop|alias }}</td>
+                            <td>{{ ticket.destination_stop|alias }}</td>
                             <td><span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-2.5 py-1">{{ ticket.passenger_count }}</span></td>
-                            <td>${{ ticket.fare }}</td>
+                            <td>₹{{ ticket.fare }}</td>
                             <td class="small text-secondary">{{ ticket.ticket_date }} {{ ticket.ticket_time }}</td>
                         </tr>
                         {% else %}
@@ -156,4 +227,76 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const busNumber = "{{ selected_bus_number }}";
+    
+    // Auto-update dashboard metrics every 10 seconds
+    setInterval(() => {
+        fetch(`/conductor/occupancy/data?bus_number=${busNumber}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update stats
+                    document.getElementById("totalOccupancyHeader").textContent = `${data.current_occupancy} / ${data.total_capacity}`;
+                    document.getElementById("seatedHeader").textContent = `${data.current_seated} / ${data.seat_capacity}`;
+                    document.getElementById("standingHeader").textContent = `${data.current_standing} / ${data.standing_capacity}`;
+                    document.getElementById("availableSeatsHeader").textContent = data.seats_available;
+                    document.getElementById("availableStandingHeader").textContent = data.standing_available;
+                    
+                    document.getElementById("rateLabelText").textContent = `Occupancy Rate: ${data.occupancy_percentage}%`;
+                    document.getElementById("gaugeSlotsText").textContent = `${data.current_occupancy} of ${data.total_capacity} Total Slots`;
+                    
+                    const pBar = document.getElementById("occupancyProgressBar");
+                    pBar.style.width = `${data.occupancy_percentage}%`;
+                    pBar.setAttribute("aria-valuenow", data.occupancy_percentage);
+                    pBar.textContent = `${data.occupancy_percentage}%`;
+                    
+                    // Update class lists for progress bar colors
+                    pBar.className = "progress-bar progress-bar-striped progress-bar-animated";
+                    if (data.occupancy_percentage >= 90) {
+                        pBar.classList.add("bg-danger");
+                    } else if (data.occupancy_percentage >= 70) {
+                        pBar.classList.add("bg-warning");
+                    } else {
+                        pBar.classList.add("bg-success");
+                    }
+
+                    // Update badge status
+                    const badge = document.getElementById("statusLabelBadge");
+                    let statusLabel = 'Available';
+                    badge.className = "badge fs-6 px-3 py-1.5";
+                    
+                    if (data.current_occupancy >= data.total_capacity) {
+                        statusLabel = 'Full';
+                        badge.classList.add("bg-danger");
+                    } else if (data.current_occupancy >= (data.total_capacity * 0.8)) {
+                        statusLabel = 'Nearly Full';
+                        badge.classList.add("bg-warning", "text-dark");
+                    } else {
+                        badge.classList.add("bg-success");
+                    }
+                    badge.textContent = statusLabel;
+
+                    // Update seat layouts dynamically
+                    data.seats.forEach(seat => {
+                        const seatEl = document.querySelector(`.bus-seat[data-seat="${seat.seat_number}"]`);
+                        if (seatEl) {
+                            seatEl.className = "bus-seat";
+                            if (seat.status === 'Available') {
+                                seatEl.classList.add("available");
+                            } else if (seat.status === 'Occupied') {
+                                seatEl.classList.add("occupied");
+                            } else {
+                                seatEl.classList.add("reserved");
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(err => console.error("Occupancy Fetch failed", err));
+    }, 10000);
+});
+</script>
 {% endblock %}
