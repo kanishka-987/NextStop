@@ -326,7 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const coordsList = {
         "Central Station": { lat: 13.0827, lon: 80.2707 },
         "Oak Avenue": { lat: 13.0067, lon: 80.2206 },
-        "Maple Road": { lat: 12.9249, lon: 80.1000 },
+        "Maple Road": { lat: 12.9249, lon: 80.1143 },
         "Aisle Street": { lat: 12.6819, lon: 79.9788 },
         "City Center": { lat: 12.6269, lon: 80.1927 },
         "Tech Park": { lat: 12.7948, lon: 80.2505 },
@@ -548,10 +548,10 @@ document.addEventListener("DOMContentLoaded", () => {
             toggleDemoTripBtn.classList.replace("btn-warning", "btn-danger");
             const intervalMs = parseInt(demoIntervalSelect.value) || 10000;
             
-            // immediately trigger next
-            simIndex = (simIndex + 1) % stopsArray.length;
-            const nextStop = stopsArray[simIndex];
-            sendLocation(coordsList[nextStop].lat, coordsList[nextStop].lon, true);
+            // immediately trigger first stop (Chennai Central)
+            simIndex = 0;
+            const firstStop = stopsArray[simIndex];
+            sendLocation(coordsList[firstStop].lat, coordsList[firstStop].lon, true);
 
             demoTripIntervalId = setInterval(() => {
                 simIndex = (simIndex + 1) % stopsArray.length;

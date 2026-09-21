@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Passenger Login - NextStop{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5 animate-fade-in">
+    <div class="col-12 col-md-6 col-lg-5">
+        <div class="glass-card p-4 p-md-5">
+            <div class="text-center mb-4">
+                <i class="bi bi-person-badge text-primary" style="font-size: 3rem;"></i>
+                <h3 class="text-white font-weight-bold mb-1 mt-2">Passenger Sign In</h3>
+                <p class="text-secondary small">Login to access QR Tickets and Destination Alerts</p>
+            </div>
+            
+            <form action="{{ url_for('auth.passenger_login') }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Email</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-secondary">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                        <input type="email" name="email" class="form-control bg-dark text-white border-secondary" placeholder="Enter your email" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-secondary">
+                            <i class="bi bi-lock"></i>
+                        </span>
+                        <input type="password" name="password" class="form-control bg-dark text-white border-secondary" placeholder="Enter password" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 py-2 mt-2 font-weight-bold">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+                </button>
+            </form>
+            
+            <div class="text-center mt-3">
+                <span class="text-secondary small">Don't have an account? </span>
+                <a href="{{ url_for('auth.passenger_register') }}" class="text-primary text-decoration-none small font-weight-bold">Sign Up</a>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('passenger_home') }}" class="text-secondary text-decoration-none small">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Public Live Map
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

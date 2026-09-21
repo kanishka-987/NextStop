@@ -15,7 +15,7 @@ gps_bp = Blueprint('gps', __name__)
 STOP_COORDINATES = {
     'Central Station': (13.0827, 80.2707), # Chennai Central
     'Oak Avenue': (13.0067, 80.2206),      # Guindy
-    'Maple Road': (12.9249, 80.1000),      # Tambaram
+    'Maple Road': (12.9249, 80.1143),      # Tambaram
     'Aisle Street': (12.6819, 79.9788),    # Chengalpattu
     'City Center': (12.6269, 80.1927),     # Mahabalipuram
     'Tech Park': (12.7948, 80.2505),       # Kovalam

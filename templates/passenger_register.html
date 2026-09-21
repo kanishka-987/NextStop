@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Passenger Sign Up - NextStop{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5 animate-fade-in">
+    <div class="col-12 col-md-6 col-lg-5">
+        <div class="glass-card p-4 p-md-5">
+            <div class="text-center mb-4">
+                <i class="bi bi-person-plus text-primary" style="font-size: 3rem;"></i>
+                <h3 class="text-white font-weight-bold mb-1 mt-2">Passenger Sign Up</h3>
+                <p class="text-secondary small">Create an account to access QR Tickets and Destination Alerts</p>
+            </div>
+            
+            <form action="{{ url_for('auth.passenger_register') }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Full Name</label>
+                    <input type="text" name="full_name" class="form-control bg-dark text-white border-secondary" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Email</label>
+                    <input type="email" name="email" class="form-control bg-dark text-white border-secondary" placeholder="Enter your email" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Phone Number</label>
+                    <input type="text" name="phone_number" class="form-control bg-dark text-white border-secondary" placeholder="Enter your phone number">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-secondary small">Password</label>
+                    <input type="password" name="password" class="form-control bg-dark text-white border-secondary" placeholder="Create a password" required>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label text-secondary small">Confirm Password</label>
+                    <input type="password" name="confirm_password" class="form-control bg-dark text-white border-secondary" placeholder="Confirm your password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 py-2 font-weight-bold">
+                    <i class="bi bi-person-plus-fill me-2"></i> Sign Up
+                </button>
+            </form>
+            
+            <div class="text-center mt-3">
+                <span class="text-secondary small">Already have an account? </span>
+                <a href="{{ url_for('auth.passenger_login') }}" class="text-primary text-decoration-none small font-weight-bold">Sign In</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

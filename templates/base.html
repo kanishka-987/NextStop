@@ -85,6 +85,13 @@
                             <li class="nav-item">
                                 <a class="nav-link nav-link-custom {% if request.path == '/conductor/profile' %}active{% endif %}" href="{{ url_for('conductor_profile') }}">Profile</a>
                             </li>
+                        {% elif user_role == 'passenger' %}
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom {% if request.path == '/passenger/dashboard' %}active{% endif %}" href="{{ url_for('passenger_dashboard') }}">Dashboard</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom {% if request.path == '/passenger' %}active{% endif %}" href="{{ url_for('passenger_home') }}">Live Buses</a>
+                            </li>
                         {% endif %}
                     {% endif %}
                 </ul>
@@ -93,11 +100,13 @@
                     {% if logged_in %}
                         <span class="text-secondary d-none d-md-inline-block">
                             <i class="bi bi-person-circle me-1"></i> {{ user_name }} 
-                            <span class="badge bg-secondary ms-1 text-capitalize">{{ user_role }}</span>
+                            <span class="badge bg-secondary ms-1">{{ user_role|capitalize }}</span>
                         </span>
-                        <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary-custom btn-sm">
-                            <i class="bi bi-box-arrow-right me-1"></i> Logout
-                        </a>
+                        {% if user_role == 'passenger' %}
+                            <a href="{{ url_for('passenger_logout') }}" class="btn btn-outline-danger btn-sm px-3">Logout</a>
+                        {% else %}
+                            <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm px-3">Logout</a>
+                        {% endif %}
                     {% else %}
                         <a href="{{ url_for('auth.login') }}" class="btn btn-secondary-custom btn-sm me-2">
                             <i class="bi bi-box-arrow-in-right me-1"></i> Login

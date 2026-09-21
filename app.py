@@ -456,8 +456,20 @@ def trip_history():
 
 @app.route('/passenger')
 def passenger_home():
-    """Passenger Home page (Public Portal)"""
+    """Passenger Home page (Public Portal) - No login required."""
     return render_template('passenger_home.html')
+
+@app.route('/passenger/dashboard')
+def passenger_dashboard():
+    """Protected Passenger Dashboard for QR Tickets and Alerts."""
+    if session.get('role') != 'passenger':
+        flash("Please login to access personalized features.", "warning")
+        return redirect(url_for('auth.passenger_login'))
+    
+    # Pass all stops for the destination dropdown
+    stops = ['Chennai Central', 'Guindy', 'Tambaram', 'Chengalpattu', 
+             'Mahabalipuram', 'Kovalam', 'Sholinganallur', 'Chennai Airport']
+    return render_template('passenger_dashboard.html', stops=stops)
 
 @app.route('/passenger/search')
 def passenger_search():
@@ -473,7 +485,7 @@ def passenger_search():
     STOP_COORDINATES = {
         'Central Station': (13.0827, 80.2707),
         'Oak Avenue': (13.0067, 80.2206),
-        'Maple Road': (12.9249, 80.1000),
+        'Maple Road': (12.9249, 80.1143),
         'Aisle Street': (12.6819, 79.9788),
         'City Center': (12.6269, 80.1927),
         'Tech Park': (12.7948, 80.2505),
@@ -516,10 +528,7 @@ def passenger_search():
             if query and (query.lower() not in bus_num.lower() and query.lower() not in route_name.lower()):
                 continue
                 
-            # Fetch latest prediction of the bus
-            cursor.execute("SELECT * FROM predictions WHERE bus_number = %s ORDER BY prediction_time DESC LIMIT 1", (bus_num,))
-            pred = cursor.fetchone()
-            
+            # Location, ETA, and Stop properties
             current_stop = bus['current_stop'] or 'Central Station'
             latitude = float(bus['latitude']) if bus['latitude'] is not None else 13.0827
             longitude = float(bus['longitude']) if bus['longitude'] is not None else 80.2707
@@ -543,31 +552,35 @@ def passenger_search():
                 minutes = int(round(dist * 200))
                 eta = f"{max(1, minutes)} mins"
                 
-            # Determine crowd level & indicator using predictions or current occupancy
-            base_predicted = pred['predicted_occupancy'] if pred else bus['current_occupancy']
-            pred_15 = int(base_predicted)
+            # Fetch latest prediction of the bus from the ML API to guarantee consistency with Admin Dashboard
+            from backend.ml import get_forecast
+            forecast = get_forecast(bus_num, current_stop, bus['current_occupancy'])
+            
+            # Evaluate time and values
+            pred_15 = forecast['predicted_occupancy']
             pred_30 = min(80, int(pred_15 * 1.1) + 2) if pred_15 > 0 else 5
-            prediction_time_str = pred['prediction_time'].strftime('%I:%M %p') if pred and pred.get('prediction_time') else "N/A"
-
-            # Calculate the crowd level based on predicted occupancy (15m) relative to total capacity of 80:
-            if pred_15 >= 80:
-                crowd_level = "Bus Full"
+            
+            # Both portals should share the same timestamp for live tracking; use now for live API fetch
+            from datetime import datetime
+            prediction_time_str = datetime.now().strftime('%I:%M %p')
+            
+            crowd_level_raw = forecast['crowd_level']
+            
+            # Map backend ML classification strings ("High Crowd", etc.) exactly to UI styling
+            if "High" in crowd_level_raw:
+                crowd_level = "Highly Crowded"
                 crowd_indicator = "🔴"
                 crowd_color = "danger"
-            elif pred_15 > 56:
-                crowd_level = "High"
-                crowd_indicator = "🔴"
-                crowd_color = "danger"
-            elif pred_15 > 32:
-                crowd_level = "Medium"
+            elif "Medium" in crowd_level_raw:
+                crowd_level = "Moderately Crowded"
                 crowd_indicator = "🟡"
                 crowd_color = "warning"
             else:
-                crowd_level = "Low"
+                crowd_level = "Comfortable"
                 crowd_indicator = "🟢"
                 crowd_color = "success"
 
-            pred_seats_available = max(0, 60 - pred_15)
+            pred_seats_available = forecast['predicted_available_seats']
             standing_warning = pred_15 > 60
 
             results.append({
@@ -594,7 +607,7 @@ def passenger_search():
                 'latitude': latitude,
                 'longitude': longitude,
                 'is_demo': is_demo,
-                'last_updated_str': str(bus['last_updated']) if bus['last_updated'] else "Just now",
+                'last_updated_str': bus['last_updated'].strftime('%I:%M %p') if bus['last_updated'] else "N/A",
                 'gps_status': 'Demo Mode' if is_demo else 'Live'
             })
             
@@ -624,6 +637,13 @@ def page_not_found(e):
 @app.errorhandler(500)
 def server_error(e):
     return render_template('base.html', error_code=500, error_message="Internal Server Error"), 500
+
+@app.route('/passenger/logout')
+def passenger_logout():
+    if session.get('role') == 'passenger':
+        session.clear()
+        flash('You have logged out.', 'info')
+    return redirect(url_for('passenger_home'))
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=True)

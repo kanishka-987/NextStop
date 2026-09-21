@@ -5,6 +5,10 @@
 {% block title %}Passenger Portal - NextStop Transit{% endblock %}
 
 {% block content %}
+<!-- Leaflet CSS & JS for Live Tracking Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <div class="row justify-content-center py-4 animate-fade-in">
     <div class="col-12 col-lg-10">
         <!-- Greeting Header -->
@@ -14,6 +18,18 @@
             </span>
             <h2 class="text-white font-weight-bold">Live Bus Occupancy & ETAs</h2>
             <p class="text-secondary max-w-xl mx-auto">Check real-time passenger capacity, seating availability, and live GPS arrival times without logging in.</p>
+            {% if not session.get('role') == 'passenger' %}
+            <div class="mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                <a href="{{ url_for('passenger_home') }}" class="btn btn-outline-info rounded-pill px-4"><i class="bi bi-bus-front me-2"></i>Live Buses</a>
+                <a href="{{ url_for('auth.passenger_login') }}" class="btn btn-outline-primary rounded-pill px-4"><i class="bi bi-lock-fill me-2"></i>Passenger Sign In</a>
+                <a href="{{ url_for('auth.passenger_register') }}" class="btn btn-primary rounded-pill px-4"><i class="bi bi-pencil-square me-2"></i>Passenger Sign Up</a>
+            </div>
+            {% else %}
+            <div class="mt-4 d-flex justify-content-center gap-3 flex-wrap">
+                <a href="{{ url_for('passenger_home') }}" class="btn btn-outline-info rounded-pill px-4"><i class="bi bi-bus-front me-2"></i>Live Buses</a>
+                <a href="{{ url_for('passenger_dashboard') }}" class="btn btn-primary rounded-pill px-4"><i class="bi bi-person-badge me-2"></i>Go to My Dashboard</a>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Search Bar Card -->
@@ -107,8 +123,8 @@
                 
                 // Color formatting for crowd level indicators
                 let badgeClass = "bg-success text-success";
-                if (bus.crowd_level === "Medium Crowd") badgeClass = "bg-warning text-warning";
-                else if (bus.crowd_level === "High Crowd") badgeClass = "bg-danger text-danger";
+                if (bus.crowd_level === "Moderately Crowded") badgeClass = "bg-warning text-warning";
+                else if (bus.crowd_level === "Highly Crowded") badgeClass = "bg-danger text-danger";
                 
                 const currAlias = aliasMap[bus.current_stop] || bus.current_stop;
                 const nextAlias = aliasMap[bus.next_stop] || bus.next_stop;
@@ -271,6 +287,15 @@
                                 </div>
                                 ` : ''}
                                 
+                                <!-- Live Map Tracking -->
+                                <div class="mt-4 border-top border-white border-opacity-10 pt-3">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="bi bi-geo-alt-fill text-primary fs-5 me-2"></i>
+                                        <h5 class="text-white font-weight-bold mb-0">Live Map Tracking</h5>
+                                    </div>
+                                    <div id="map-${bus.bus_number}" style="height: 300px; border-radius: 12px; z-index: 1;"></div>
+                                </div>
+                                
                                 <div class="text-end mt-3">
                                     <span class="text-secondary small">Route bounds: <strong class="text-white">${srcAlias} ➔ ${destAlias}</strong></span>
                                 </div>
@@ -278,6 +303,48 @@
                         </div>
                     </div>
                 `;
+            });
+            
+            // Initialize Leaflet maps after the DOM elements are created
+            data.results.forEach(bus => {
+                const mapId = `map-${bus.bus_number}`;
+                const mapElement = document.getElementById(mapId);
+                if (mapElement) {
+                    const lat = parseFloat(bus.latitude) || 13.0827;
+                    const lon = parseFloat(bus.longitude) || 80.2707;
+                    
+                    const map = L.map(mapId).setView([lat, lon], 12);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap'
+                    }).addTo(map);
+
+                    const routeCoords = [
+                        [13.0827, 80.2707], // Chennai Central
+                        [13.0067, 80.2206], // Guindy
+                        [12.9249, 80.1143], // Tambaram
+                        [12.6819, 79.9788], // Chengalpattu
+                        [12.6269, 80.1927], // Mahabalipuram
+                        [12.7948, 80.2505], // Kovalam
+                        [12.9010, 80.2279], // Sholinganallur
+                        [12.9716, 80.1836]  // Chennai Airport
+                    ];
+
+                    L.polyline(routeCoords, { color: '#0d6efd', weight: 4, dashArray: '10, 10' }).addTo(map);
+                    routeCoords.forEach(coord => {
+                        L.circleMarker(coord, { radius: 4, fillColor: "#fff", color: "#000", weight: 2, fillOpacity: 1 }).addTo(map);
+                    });
+
+                    const busIconHtml = `
+                        <div style="background-color: #0d6efd; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);">
+                            <i class="bi bi-bus-front"></i>
+                        </div>
+                    `;
+                    const busIcon = L.divIcon({ html: busIconHtml, className: "", iconSize: [30, 30], iconAnchor: [15, 15] });
+                    const currAlias = aliasMap[bus.current_stop] || bus.current_stop;
+                    L.marker([lat, lon], { icon: busIcon }).addTo(map)
+                        .bindPopup(`<strong>Bus ${bus.bus_number}</strong><br>Stop: ${currAlias}`).openPopup();
+                }
             });
 
         } catch (error) {

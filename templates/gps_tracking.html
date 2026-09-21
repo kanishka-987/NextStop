@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const routeCoords = [
         [13.0827, 80.2707], // Chennai Central
         [13.0067, 80.2206], // Guindy
-        [12.9249, 80.1000], // Tambaram
+        [12.9249, 80.1143], // Tambaram
         [12.6819, 79.9788], // Chengalpattu
         [12.6269, 80.1927], // Mahabalipuram
         [12.7948, 80.2505], // Kovalam
@@ -161,6 +161,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     const stop = data.current_stop;
                     const displayStop = aliasMap[stop] || stop;
                     
+                    console.log(`[MAP TRACE] API returned for bus ${busNumber}:`);
+                    console.log(`[MAP TRACE] Latitude: ${lat}, Longitude: ${lon}`);
+                    console.log(`[MAP TRACE] Detected Stop: ${stop} (Display: ${displayStop})`);
+                    console.log(`[MAP TRACE] is_demo: ${data.is_demo}`);
+
                     // Pan map and marker position
                     map.panTo([lat, lon]);
                     marker.setLatLng([lat, lon]);

@@ -1,0 +1,394 @@
+{% extends 'base.html' %}
+
+{% block title %}Passenger Dashboard - NextStop{% endblock %}
+
+{% block content %}
+<div class="row animate-fade-in py-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="text-white font-weight-bold mb-1">My Dashboard</h2>
+                <p class="text-secondary mb-0">Welcome, {{ session.get('full_name', 'Passenger') }}</p>
+            </div>
+            <div>
+                <a href="{{ url_for('passenger_home') }}" class="btn btn-outline-secondary me-2"><i class="bi bi-map me-1"></i> Live Map</a>
+                <a href="{{ url_for('passenger_logout') }}" class="btn btn-outline-danger"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            </div>
+        </div>
+        
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-pills mb-4 gap-2" id="passengerTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded-pill px-4" id="alerts-tab" data-bs-toggle="tab" data-bs-target="#alerts" type="button" role="tab">
+                    <i class="bi bi-bell-fill me-2"></i>Destination Alerts
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4" id="qr-tab" data-bs-toggle="tab" data-bs-target="#qr" type="button" role="tab">
+                    <i class="bi bi-qr-code-scan me-2"></i>QR Ticket
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4" id="trips-tab" data-bs-toggle="tab" data-bs-target="#trips" type="button" role="tab">
+                    <i class="bi bi-clock-history me-2"></i>My Trips
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+                    <i class="bi bi-person-fill me-2"></i>Profile
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="passengerTabContent">
+            
+            <!-- Destination Alerts Tab -->
+            <div class="tab-pane fade show active" id="alerts" role="tabpanel">
+                <div class="glass-card p-4">
+                    <h4 class="text-white mb-3"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Set Destination Alert</h4>
+                    <p class="text-secondary small mb-4">Select your destination stop. We will notify you when the bus approaches.</p>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small">Destination Stop</label>
+                            <select class="form-select bg-dark text-white border-secondary" id="alertDestSelect">
+                                <option value="" disabled selected>Select Destination ▼</option>
+                                {% for stop in stops %}
+                                <option value="{{ stop }}">{{ stop }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button id="setAlertBtn" class="btn btn-primary w-100 py-2"><i class="bi bi-bell-fill me-2"></i> Set Alert</button>
+                        </div>
+                    </div>
+                    
+                    <div id="alertStatusContainer" class="d-none">
+                        <div class="alert alert-info border-info border-opacity-25 bg-info bg-opacity-10 d-flex align-items-center mb-0">
+                            <div class="spinner-grow spinner-grow-sm text-info me-3" role="status"></div>
+                            <div>
+                                <strong class="d-block text-white">Monitoring Active Buses...</strong>
+                                <span class="small text-info">Waiting to approach <span id="alertTargetText" class="font-weight-bold"></span></span>
+                            </div>
+                            <button id="cancelAlertBtn" class="btn btn-sm btn-outline-danger ms-auto">Cancel</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Alert Notification Box -->
+                    <div id="notificationBox" class="alert alert-success border-success border-opacity-25 bg-success bg-opacity-10 d-none mt-3">
+                        <div class="d-flex">
+                            <i class="bi bi-bell-ring-fill fs-2 text-success me-3"></i>
+                            <div>
+                                <h5 class="text-white font-weight-bold mb-1">🔔 Your destination is approaching!</h5>
+                                <p class="text-success mb-1">Next Stop: <strong id="notificationStop"></strong></p>
+                                <p class="text-secondary small mb-0">Please prepare to get down.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- QR Ticket Tab -->
+            <div class="tab-pane fade" id="qr" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="glass-card p-4 h-100">
+                            <h4 class="text-white mb-3"><i class="bi bi-ticket-detailed-fill text-warning me-2"></i>Generate Digital Ticket</h4>
+                            <p class="text-secondary small mb-4">Generate a QR code ticket for your journey.</p>
+                            
+                            <form id="qrTicketForm">
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary small">Source</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="qrSource" required>
+                                        {% for stop in stops %}
+                                        <option value="{{ stop }}">{{ stop }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-secondary small">Destination</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="qrDest" required>
+                                        {% for stop in stops[::-1] %}
+                                        <option value="{{ stop }}">{{ stop }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-warning w-100 font-weight-bold py-2"><i class="bi bi-qr-code-scan me-2"></i> Generate QR Ticket</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mt-4 mt-md-0">
+                        <div class="glass-card p-4 h-100 d-flex flex-column align-items-center justify-content-center" id="qrResultContainer">
+                            <i class="bi bi-ticket-perforated text-secondary opacity-25" style="font-size: 5rem;"></i>
+                            <p class="text-secondary mt-3">Your generated ticket will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- My Trips Tab -->
+            <div class="tab-pane fade" id="trips" role="tabpanel">
+                <div class="glass-card p-4">
+                    <h4 class="text-white mb-4"><i class="bi bi-clock-history text-info me-2"></i>My QR Tickets</h4>
+                    <div id="ticketsListContainer" class="row g-3">
+                        <!-- Tickets will be loaded here via JS -->
+                        <div class="col-12 text-center py-5">
+                            <p class="text-secondary">No previous tickets found.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile Tab -->
+            <div class="tab-pane fade" id="profile" role="tabpanel">
+                <div class="glass-card p-4">
+                    <h4 class="text-white mb-4"><i class="bi bi-person-fill text-primary me-2"></i>My Profile</h4>
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-primary bg-opacity-25 text-primary rounded-circle d-flex align-items-center justify-content-center me-4" style="width: 80px; height: 80px; font-size: 2.5rem;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white mb-1">{{ session.get('full_name', 'Passenger') }}</h3>
+                            <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary border-opacity-25">Passenger Account</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<!-- Add qrcode.js for frontend QR generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // --- DESTINATION ALERT LOGIC ---
+    let alertInterval = null;
+    let targetDest = null;
+    const alertDestSelect = document.getElementById('alertDestSelect');
+    const setAlertBtn = document.getElementById('setAlertBtn');
+    const alertStatusContainer = document.getElementById('alertStatusContainer');
+    const cancelAlertBtn = document.getElementById('cancelAlertBtn');
+    const alertTargetText = document.getElementById('alertTargetText');
+    const notificationBox = document.getElementById('notificationBox');
+    const notificationStop = document.getElementById('notificationStop');
+
+    setAlertBtn.addEventListener('click', () => {
+        if(!alertDestSelect.value) return;
+        targetDest = alertDestSelect.value;
+        alertTargetText.textContent = targetDest;
+        alertStatusContainer.classList.remove('d-none');
+        notificationBox.classList.add('d-none');
+        
+        // Check every 5 seconds
+        if(alertInterval) clearInterval(alertInterval);
+        alertInterval = setInterval(checkBusLocation, 5000);
+        checkBusLocation(); // check immediately
+    });
+
+    cancelAlertBtn.addEventListener('click', () => {
+        if(alertInterval) clearInterval(alertInterval);
+        alertStatusContainer.classList.add('d-none');
+        targetDest = null;
+    });
+
+    function checkBusLocation() {
+        if(!targetDest) return;
+        fetch('/passenger/search')
+            .then(res => res.json())
+            .then(data => {
+                if(data.results && data.results.length > 0) {
+                    for(let bus of data.results) {
+                        const aliasMap = {
+                            "Central Station": "Chennai Central",
+                            "Oak Avenue": "Guindy",
+                            "Maple Road": "Tambaram",
+                            "Aisle Street": "Chengalpattu",
+                            "City Center": "Mahabalipuram",
+                            "Tech Park": "Kovalam",
+                            "South Gate": "Sholinganallur",
+                            "East Airport": "Chennai Airport"
+                        };
+                        const currAlias = aliasMap[bus.current_stop] || bus.current_stop;
+                        const nextAlias = aliasMap[bus.next_stop] || bus.next_stop;
+                        
+                        if(currAlias === targetDest || bus.current_stop === targetDest) {
+                            // Arrived!
+                            clearInterval(alertInterval);
+                            alertStatusContainer.classList.add('d-none');
+                            notificationStop.textContent = targetDest;
+                            notificationBox.innerHTML = `
+                                <div class="d-flex">
+                                    <i class="bi bi-geo-alt-fill fs-2 text-success me-3"></i>
+                                    <div>
+                                        <h5 class="text-white font-weight-bold mb-1">🔔 Your destination has arrived!</h5>
+                                        <p class="text-success mb-1">Current Stop: <strong id="notificationStop">${targetDest}</strong></p>
+                                        <p class="text-secondary small mb-0">Please get ready to exit the bus.</p>
+                                    </div>
+                                </div>
+                            `;
+                            notificationBox.classList.remove('d-none');
+                            break;
+                        }
+                        else if(nextAlias === targetDest || bus.next_stop === targetDest) {
+                            // Approaching
+                            alertStatusContainer.classList.add('d-none');
+                            notificationBox.innerHTML = `
+                                <div class="d-flex">
+                                    <i class="bi bi-bell-ring-fill fs-2 text-warning me-3"></i>
+                                    <div>
+                                        <h5 class="text-white font-weight-bold mb-1">🔔 Your destination is approaching!</h5>
+                                        <p class="text-warning mb-1">Next Stop: <strong id="notificationStop">${targetDest}</strong></p>
+                                        <p class="text-secondary small mb-0">Please prepare to get down.</p>
+                                    </div>
+                                </div>
+                            `;
+                            notificationBox.classList.remove('d-none');
+                            break; // don't clear interval, keep monitoring until arrived
+                        }
+                    }
+                }
+            })
+            .catch(err => console.error("Error checking alerts:", err));
+    }
+
+
+    // --- QR TICKET LOGIC ---
+    const qrTicketForm = document.getElementById('qrTicketForm');
+    const qrResultContainer = document.getElementById('qrResultContainer');
+    const ticketsListContainer = document.getElementById('ticketsListContainer');
+    
+    let myTickets = [];
+    
+    function loadTicketHistory() {
+        fetch('/api/tickets/my_trips')
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    myTickets = data.tickets;
+                    renderTicketHistory();
+                }
+            })
+            .catch(err => console.error("Error loading tickets:", err));
+    }
+    
+    function renderTicketHistory() {
+        if(myTickets.length === 0) {
+            ticketsListContainer.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <p class="text-secondary">No previous tickets found.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        myTickets.forEach(t => {
+            html += `
+                <div class="col-md-6 col-lg-4">
+                    <div class="p-3 rounded border border-white border-opacity-10 bg-dark bg-opacity-25 h-100 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">${t.ticket_status}</span>
+                            <span class="text-secondary small">${t.ticket_date}</span>
+                        </div>
+                        <h6 class="text-white mb-0">ID: ${t.ticket_id}</h6>
+                        <hr class="border-secondary my-2">
+                        <div class="small text-secondary mb-1">From: <strong class="text-white">${t.source_stop}</strong></div>
+                        <div class="small text-secondary mb-1">To: <strong class="text-white">${t.destination_stop}</strong></div>
+                        <div class="small text-secondary mb-3">Bus: <strong class="text-white">${t.bus_number}</strong> | Fare: <strong class="text-success">₹${t.fare}</strong></div>
+                        <button class="btn btn-sm btn-outline-primary mt-auto w-100" onclick="viewTicket(${t.ticket_id})">View QR</button>
+                    </div>
+                </div>
+            `;
+        });
+        ticketsListContainer.innerHTML = html;
+    }
+    
+    loadTicketHistory();
+
+    window.viewTicket = function(id) {
+        const t = myTickets.find(x => x.ticket_id === id);
+        if(!t) return;
+        
+        const qrTab = new bootstrap.Tab(document.getElementById('qr-tab'));
+        qrTab.show();
+        
+        displayTicket(t);
+    };
+
+    function displayTicket(t) {
+        qrResultContainer.innerHTML = `
+            <div class="bg-white p-3 rounded text-center w-100" style="max-width: 300px; margin: 0 auto;">
+                <h5 class="text-dark font-weight-bold mb-0">NEXTSTOP</h5>
+                <p class="text-muted small mb-3">Digital Bus Ticket</p>
+                <hr>
+                <div class="text-start small text-dark mb-3">
+                    <div><strong>Passenger:</strong> {{ session.get('full_name', 'Passenger') }}</div>
+                    <div><strong>Ticket ID:</strong> ${t.ticket_id}</div>
+                    <div><strong>Bus:</strong> ${t.bus_number}</div>
+                    <div><strong>From:</strong> ${t.source_stop}</div>
+                    <div><strong>To:</strong> ${t.destination_stop}</div>
+                    <div><strong>Date:</strong> ${t.ticket_date}</div>
+                    <div><strong>Fare:</strong> ₹${t.fare}</div>
+                </div>
+                <div id="qrCodeDiv" class="d-flex justify-content-center mb-3"></div>
+                <span class="badge bg-success text-white w-100 py-2">Status: ${t.ticket_status}</span>
+            </div>
+        `;
+        
+        new QRCode(document.getElementById("qrCodeDiv"), {
+            text: `Ticket ID: ${t.ticket_id}\nBus: ${t.bus_number}\nFrom: ${t.source_stop}\nTo: ${t.destination_stop}\nFare: Rs${t.fare}`,
+            width: 150,
+            height: 150,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.M
+        });
+    }
+
+    qrTicketForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const src = document.getElementById('qrSource').value;
+        const dest = document.getElementById('qrDest').value;
+        
+        fetch('/api/tickets/generate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                bus_number: 'NS-B01',
+                source_stop: src,
+                destination_stop: dest
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                if (data.is_standing) {
+                    alert("All seats are occupied. Passenger will travel as Standing.");
+                }
+                loadTicketHistory(); // reload and show ticket
+                // Display the newly generated ticket immediately
+                const t = {
+                    ticket_id: data.ticket_id,
+                    bus_number: 'NS-B01',
+                    source_stop: src,
+                    destination_stop: dest,
+                    ticket_date: data.date,
+                    fare: data.fare,
+                    ticket_status: 'Active'
+                };
+                displayTicket(t);
+                alert("Ticket Generated Successfully!");
+            } else {
+                alert("Failed to generate ticket: " + data.error);
+            }
+        })
+        .catch(err => console.error("Error generating ticket:", err));
+    });
+});
+</script>
+{% endblock %}
