@@ -127,35 +127,46 @@
                                     <span class="text-secondary small">Chennai Central ➔ Chennai Airport</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
+                                    <div class="text-end me-2 d-none d-sm-block">
+                                        <span class="text-secondary" style="font-size: 0.70rem; display: block;">Last Updated:</span>
+                                        <span class="text-white" style="font-size: 0.75rem;">${bus.last_updated_str}</span>
+                                    </div>
                                     <span class="badge ${badgeClass} bg-opacity-10 border border-current px-2.5 py-1 text-uppercase font-weight-semibold" style="font-size: 0.75rem;">
                                         ${bus.crowd_indicator} ${bus.crowd_level}
                                     </span>
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 font-weight-semibold" style="font-size: 0.75rem;">
-                                        GPS Feed: ${bus.gps_status}
+                                    <span class="badge ${bus.is_demo ? 'bg-warning text-warning border-warning' : 'bg-success text-success border-success'} bg-opacity-10 border border-opacity-25 px-2.5 py-1 font-weight-semibold" style="font-size: 0.75rem;">
+                                        ${bus.is_demo ? '🟡 DEMO MODE – SIMULATED GPS' : '🟢 LIVE GPS'}
                                     </span>
                                 </div>
                             </div>
 
                             <!-- Route Stop Progress Visualizer -->
                             <div class="mb-4">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <div class="text-start">
-                                        <span class="text-secondary small d-block">Current Stop</span>
-                                        <strong class="text-white">${currAlias}</strong>
-                                    </div>
-                                    <div class="text-center flex-grow-1 px-4 d-none d-sm-block">
-                                        <div class="position-relative py-2">
-                                            <div class="progress" style="height: 3px; background: rgba(255,255,255,0.05);">
-                                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: ${pct}%"></div>
-                                            </div>
-                                            <span class="position-absolute top-50 start-50 translate-middle badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-0.5" style="font-size: 0.65rem;">
-                                                EN ROUTE
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <span class="text-secondary small d-block">Next Stop</span>
-                                        <strong class="text-white">${nextAlias}</strong>
+                                <div class="p-3 rounded bg-dark bg-opacity-25 border border-white border-opacity-5">
+                                    <h6 class="text-secondary small mb-3">Route Progress</h6>
+                                    <div class="d-flex flex-column" style="font-size: 0.85rem;">
+                                        ${stopsArray.map((stop, index) => {
+                                            const stopAlias = aliasMap[stop] || stop;
+                                            let icon = '<i class="bi bi-circle text-secondary me-2"></i>';
+                                            let textClass = 'text-secondary';
+                                            let suffix = '';
+                                            
+                                            if (index < currIndex) {
+                                                icon = '<i class="bi bi-check-circle-fill text-success me-2"></i>';
+                                                textClass = 'text-success';
+                                            } else if (index === currIndex) {
+                                                icon = '🚌&nbsp;';
+                                                textClass = 'text-primary font-weight-bold';
+                                                suffix = ' <span class="badge bg-primary bg-opacity-10 text-primary ms-2" style="font-size:0.6rem;">CURRENT</span>';
+                                            }
+                                            
+                                            return `
+                                                <div class="d-flex align-items-center mb-1">
+                                                    ${icon} <span class="${textClass}">${stopAlias}</span>${suffix}
+                                                </div>
+                                                ${index < stopsArray.length - 1 ? `<div class="ms-1 ps-2 border-start border-secondary mb-1" style="height: 12px; margin-left: 6px;"></div>` : ''}
+                                            `;
+                                        }).join('')}
                                     </div>
                                 </div>
                             </div>
@@ -221,13 +232,13 @@
                                 </div>
                                 
                                 <div class="row g-3">
-                                    <div class="col-sm-6 col-md-3">
+                                    <div class="col-sm-6 col-md-2">
                                         <div class="p-2 rounded bg-dark bg-opacity-25 border border-white border-opacity-5">
                                             <span class="text-secondary small d-block">15 min</span>
                                             <strong class="text-white">${bus.pred_15} / ${bus.seat_capacity + bus.standing_capacity}</strong>
                                         </div>
                                     </div>
-                                    <div class="col-sm-6 col-md-3">
+                                    <div class="col-sm-6 col-md-2">
                                         <div class="p-2 rounded bg-dark bg-opacity-25 border border-white border-opacity-5">
                                             <span class="text-secondary small d-block">30 min</span>
                                             <strong class="text-white">${bus.pred_30} / ${bus.seat_capacity + bus.standing_capacity}</strong>
@@ -235,7 +246,13 @@
                                     </div>
                                     <div class="col-sm-6 col-md-3">
                                         <div class="p-2 rounded bg-dark bg-opacity-25 border border-white border-opacity-5">
-                                            <span class="text-secondary small d-block">Crowd Level</span>
+                                            <span class="text-secondary small d-block">Predicted At</span>
+                                            <strong class="text-white">${bus.prediction_time_str}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-md-2">
+                                        <div class="p-2 rounded bg-dark bg-opacity-25 border border-white border-opacity-5">
+                                            <span class="text-secondary small d-block">Crowd</span>
                                             <strong class="text-${bus.crowd_color} text-uppercase">${bus.crowd_level}</strong>
                                         </div>
                                     </div>

@@ -489,18 +489,26 @@ def passenger_search():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        # Select all active buses joined with occupancy
+        # Select all active buses joined with occupancy and bus_location
+        # Using JOIN on bus_location ensures only buses actively tracked are shown
         cursor.execute("""
-            SELECT o.*, b.route_name 
-            FROM occupancy o
-            JOIN buses b ON o.bus_number = b.bus_number
+            SELECT b.bus_number, b.route_name, 
+                   COALESCE(o.current_occupancy, 0) as current_occupancy,
+                   COALESCE(o.seat_capacity, 60) as seat_capacity,
+                   COALESCE(o.seats_available, 60) as seats_available,
+                   COALESCE(o.standing_capacity, 20) as standing_capacity,
+                   COALESCE(o.standing_available, 20) as standing_available,
+                   l.latitude, l.longitude, l.current_stop, l.is_demo, l.last_updated
+            FROM buses b
+            LEFT JOIN occupancy o ON b.bus_number = o.bus_number
+            JOIN bus_location l ON b.bus_number = l.bus_number
             WHERE b.status = 'active'
         """)
         buses = cursor.fetchall()
         
         for bus in buses:
             bus_num = bus['bus_number']
-            route_name = bus['route_name']
+            route_name = bus['route_name'] or ""
             source_stop = "Central Station"
             destination_stop = "East Airport"
             
@@ -508,17 +516,14 @@ def passenger_search():
             if query and (query.lower() not in bus_num.lower() and query.lower() not in route_name.lower()):
                 continue
                 
-            # Fetch latest location of the bus
-            cursor.execute("SELECT * FROM bus_location WHERE bus_number = %s ORDER BY last_updated DESC LIMIT 1", (bus_num,))
-            loc = cursor.fetchone()
-            
             # Fetch latest prediction of the bus
             cursor.execute("SELECT * FROM predictions WHERE bus_number = %s ORDER BY prediction_time DESC LIMIT 1", (bus_num,))
             pred = cursor.fetchone()
             
-            current_stop = loc['current_stop'] if loc else 'Central Station'
-            latitude = loc['latitude'] if loc else 13.0827
-            longitude = loc['longitude'] if loc else 80.2707
+            current_stop = bus['current_stop'] or 'Central Station'
+            latitude = float(bus['latitude']) if bus['latitude'] is not None else 13.0827
+            longitude = float(bus['longitude']) if bus['longitude'] is not None else 80.2707
+            is_demo = bool(bus.get('is_demo', False))
             
             # Determine next stop in the sequence
             next_stop = 'East Airport'
@@ -542,6 +547,7 @@ def passenger_search():
             base_predicted = pred['predicted_occupancy'] if pred else bus['current_occupancy']
             pred_15 = int(base_predicted)
             pred_30 = min(80, int(pred_15 * 1.1) + 2) if pred_15 > 0 else 5
+            prediction_time_str = pred['prediction_time'].strftime('%I:%M %p') if pred and pred.get('prediction_time') else "N/A"
 
             # Calculate the crowd level based on predicted occupancy (15m) relative to total capacity of 80:
             if pred_15 >= 80:
@@ -578,6 +584,7 @@ def passenger_search():
                 'standing_available': bus['standing_available'],
                 'pred_15': pred_15,
                 'pred_30': pred_30,
+                'prediction_time_str': prediction_time_str,
                 'pred_seats_available': pred_seats_available,
                 'standing_warning': standing_warning,
                 'crowd_level': crowd_level,
@@ -586,7 +593,9 @@ def passenger_search():
                 'eta': eta,
                 'latitude': latitude,
                 'longitude': longitude,
-                'gps_status': 'Online' if loc else 'Offline'
+                'is_demo': is_demo,
+                'last_updated_str': str(bus['last_updated']) if bus['last_updated'] else "Just now",
+                'gps_status': 'Demo Mode' if is_demo else 'Live'
             })
             
     except Exception as e:
